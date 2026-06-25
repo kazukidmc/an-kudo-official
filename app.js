@@ -112,8 +112,8 @@ function renderProfile(p){
   ].filter(r=> r[1] && r[1] !== 'undefined' && r[1] !== 'null');
   $('#profileData').innerHTML = rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('');
   $('#profileMsg').textContent = p.message || '';
-  if(p.twitter_url){ $('#snsBtn').href = p.twitter_url; }
-  if(p.heaven_url){ const h=$('#heavenBtn'), r=$('#reserveBtn'); if(h) h.href=p.heaven_url; if(r) r.href=p.heaven_url; }
+  // SNS/予約リンクはHTML側の正しい値（@MOE_Emachi / シティヘブン）を使う。
+  // DBの古い値で上書きしないよう、ここでは href を変更しない。
 }
 
 // プロフィール編集
