@@ -75,63 +75,70 @@ function requireBackend(){
   return true;
 }
 
-/* ---------- プロフィール ---------- */
-const PROFILE_FIELDS = [
-  ['name','名前'],['age','年齢'],['height','身長'],['bwh','スリーサイズ'],['cup','おっぱい❤'],
-  ['blood','血液型'],['visual','ビジュアル'],['personality','性格・キャラ'],['hobby','趣味'],
-  ['skill','特技'],['likes','好きなもの'],['charm','チャームポイント'],['shop','所属店舗'],
-  ['service','接客スタイル'],['reserve','予約'],['message','ひとこと(任意)'],
-  ['twitter_url','X(Twitter) URL'],['heaven_url','写メ日記/予約 URL']
+/* ---------- プロフィール ----------
+   DBの message 列に JSON で保存（スキーマ変更不要・全項目「任意」で空欄OK）。
+   保存がまだ無ければ DEFAULT_PROFILE を表示。 */
+const PROFILE_SCHEMA = [
+  ['name','名 前'],['age','年 齢'],['height','身 長'],['bwh','スリーサイズ'],['cup','おっぱい❤'],
+  ['blood','血液型'],['visual','ビジュアル'],['personality','性格・キャラ'],['hobby','趣 味'],
+  ['skill','特 技'],['likes','好きなもの'],['charm','チャームポイント'],['shop','所属店舗'],
+  ['service','接客スタイル'],['reserve','予 約']
 ];
-let profileCache = null;
+const LINK_SCHEMA = [
+  ['twitter_url','X(Twitter) URL'],['heaven_url','写メ日記・予約 URL']
+];
+const DEFAULT_PROFILE = {
+  name:'えま', age:'永遠の21歳', height:'149cm', bwh:'B88 W56 H86', cup:'Eカップ❤',
+  blood:'B型', visual:'むちむちぷりてぃがーる', personality:'明るい、えっちなお姉さん',
+  hobby:'旅行、ぎゃんぶる、散歩', skill:'ニャンちゅうのモノマネ、騎♡位', likes:'炭水化物',
+  charm:'おしりのﾎｸﾛ', shop:'萌えフードル学園大宮本校', service:'甘々いちゃいちゃからすんごいやつまで！',
+  reserve:'シティヘブンから',
+  twitter_url:'https://x.com/MOE_Emachi',
+  heaven_url:'https://www.cityheaven.net/saitama/A1101/A110101/moegaku/girlid-44311496/'
+};
+let profileCache = {...DEFAULT_PROFILE};
 
 async function loadProfile(){
-  if(!sb) return; // デモ時はHTMLの初期値
-  const { data, error } = await sb.from('profile').select('*').eq('id',1).single();
-  if(error || !data) return;
+  let data = {...DEFAULT_PROFILE};
+  if(sb){
+    const { data:row } = await sb.from('profile').select('message').eq('id',1).single();
+    if(row && row.message){
+      try{ const j = JSON.parse(row.message); if(j && typeof j === 'object') data = {...DEFAULT_PROFILE, ...j}; }
+      catch(_){ /* 旧テキストはJSONでないので無視し、初期値を表示 */ }
+    }
+  }
   profileCache = data;
   renderProfile(data);
 }
 function renderProfile(p){
-  const rows = [
-    ['名 前', esc(p.name)],
-    ['年 齢', esc(p.age)],
-    ['身 長', esc(p.height)],
-    ['スリーサイズ', esc(p.bwh)],
-    ['おっぱい❤', esc(p.cup)],
-    ['血液型', esc(p.blood)],
-    ['ビジュアル', esc(p.visual)],
-    ['性 格', esc(p.personality)],
-    ['趣 味', esc(p.hobby)],
-    ['特 技', esc(p.skill)],
-    ['好きなもの', esc(p.likes)],
-    ['チャームポイント', esc(p.charm)],
-    ['所属店舗', esc(p.shop)],
-    ['接客スタイル', esc(p.service)],
-    ['予 約', esc(p.reserve)],
-  ].filter(r=> r[1] && r[1] !== 'undefined' && r[1] !== 'null');
+  const rows = PROFILE_SCHEMA
+    .map(([k,label])=> [label, esc(p[k])])
+    .filter(r=> r[1] && r[1] !== 'undefined' && r[1] !== 'null');
   $('#profileData').innerHTML = rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('');
-  $('#profileMsg').textContent = p.message || '';
-  // SNS/予約リンクはHTML側の正しい値（@MOE_Emachi / シティヘブン）を使う。
-  // DBの古い値で上書きしないよう、ここでは href を変更しない。
+  if(p.twitter_url){ $('#snsBtn').href = p.twitter_url; }
+  if(p.heaven_url){ const h=$('#heavenBtn'); if(h) h.href = p.heaven_url; }
 }
 
-// プロフィール編集
+// プロフィール編集（全項目「任意」＝空欄のまま保存してもOK）
 $('#editProfileBtn').addEventListener('click', ()=>{
   if(!requireBackend()) return;
   const p = profileCache || {};
-  $('#peGrid').innerHTML = PROFILE_FIELDS.map(([k,label])=>{
+  const fields = [...PROFILE_SCHEMA, ...LINK_SCHEMA];
+  $('#peGrid').innerHTML = fields.map(([k,label])=>{
     const v = esc(p[k]);
-    const input = (k==='message') ? `<textarea data-k="${k}">${v}</textarea>` : `<input data-k="${k}" value="${v}">`;
-    return `<div><label>${label}</label>${input}</div>`;
+    const long = (k==='service' || k==='personality');
+    const input = long ? `<textarea data-k="${k}">${v}</textarea>` : `<input data-k="${k}" value="${v}">`;
+    return `<div><label>${label}（任意）</label>${input}</div>`;
   }).join('');
   $('#profileModal').classList.add('show');
 });
 $('#peCancel').addEventListener('click', ()=> $('#profileModal').classList.remove('show'));
 $('#peSave').addEventListener('click', async ()=>{
-  const upd = {}; $$('#peGrid [data-k]').forEach(el=> upd[el.dataset.k] = el.value.trim());
-  upd.updated_at = new Date().toISOString();
-  const { error } = await sb.from('profile').update(upd).eq('id',1);
+  if(!sb){ toast('保存にはSupabase接続が必要です'); return; }
+  const obj = {...profileCache};
+  $$('#peGrid [data-k]').forEach(el=> obj[el.dataset.k] = el.value.trim());
+  const { error } = await sb.from('profile')
+    .update({ message: JSON.stringify(obj), updated_at: new Date().toISOString() }).eq('id',1);
   if(error){ toast('保存に失敗: '+error.message); return; }
   $('#profileModal').classList.remove('show'); toast('プロフィールを更新しました'); loadProfile();
 });
@@ -343,7 +350,8 @@ $('#loginBtn').addEventListener('click', async ()=>{
         .subscribe();
     }catch(_){}
   } else {
-    // デモモード：サンプル表示のまま。バックエンド機能は接続後に有効化。
+    // デモモード：プロフィールは初期値を表示。バックエンド機能は接続後に有効化。
+    loadProfile();
     console.info('[DEMO] Supabase未接続。config.js を設定すると全機能が有効になります。');
   }
 })();
