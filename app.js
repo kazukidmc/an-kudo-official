@@ -1,5 +1,5 @@
 /* ============================================================
-   工藤 杏 公式サイト  ─  アプリ本体
+   えま 公式サイト  ─  アプリ本体
    Supabase（DB/Storage/Auth）連携 + 各機能
    ============================================================ */
 'use strict';
@@ -77,8 +77,11 @@ function requireBackend(){
 
 /* ---------- プロフィール ---------- */
 const PROFILE_FIELDS = [
-  ['name','名前'],['yomi','よみ'],['nickname','愛称'],['birthday','誕生日'],['sign','星座'],
-  ['origin','出身'],['hobby','趣味'],['skill','特技'],['charm','魅力'],['message','メッセージ'],['twitter_url','X(Twitter) URL']
+  ['name','名前'],['age','年齢'],['height','身長'],['bwh','スリーサイズ'],['cup','おっぱい❤'],
+  ['blood','血液型'],['visual','ビジュアル'],['personality','性格・キャラ'],['hobby','趣味'],
+  ['skill','特技'],['likes','好きなもの'],['charm','チャームポイント'],['shop','所属店舗'],
+  ['service','接客スタイル'],['reserve','予約'],['message','ひとこと(任意)'],
+  ['twitter_url','X(Twitter) URL'],['heaven_url','写メ日記/予約 URL']
 ];
 let profileCache = null;
 
@@ -91,18 +94,26 @@ async function loadProfile(){
 }
 function renderProfile(p){
   const rows = [
-    ['名 前', (p.name||'') + (p.yomi?`<small>${esc(p.yomi)}</small>`:'')],
-    ['愛 称', esc(p.nickname)],
-    ['誕生日', esc(p.birthday)],
-    ['星 座', esc(p.sign)],
-    ['出 身', esc(p.origin)],
+    ['名 前', esc(p.name)],
+    ['年 齢', esc(p.age)],
+    ['身 長', esc(p.height)],
+    ['スリーサイズ', esc(p.bwh)],
+    ['おっぱい❤', esc(p.cup)],
+    ['血液型', esc(p.blood)],
+    ['ビジュアル', esc(p.visual)],
+    ['性 格', esc(p.personality)],
     ['趣 味', esc(p.hobby)],
     ['特 技', esc(p.skill)],
-    ['魅 力', esc(p.charm)],
-  ].filter(r=>r[1] && r[1] !== 'undefined');
+    ['好きなもの', esc(p.likes)],
+    ['チャームポイント', esc(p.charm)],
+    ['所属店舗', esc(p.shop)],
+    ['接客スタイル', esc(p.service)],
+    ['予 約', esc(p.reserve)],
+  ].filter(r=> r[1] && r[1] !== 'undefined' && r[1] !== 'null');
   $('#profileData').innerHTML = rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('');
   $('#profileMsg').textContent = p.message || '';
   if(p.twitter_url){ $('#snsBtn').href = p.twitter_url; }
+  if(p.heaven_url){ const h=$('#heavenBtn'), r=$('#reserveBtn'); if(h) h.href=p.heaven_url; if(r) r.href=p.heaven_url; }
 }
 
 // プロフィール編集
@@ -272,7 +283,7 @@ $('#commentList').addEventListener('click', async e=>{
     const c = rep.closest('.comment');
     if(c.querySelector('.reply-form')) return;
     const f = document.createElement('div'); f.className='reply-form';
-    f.innerHTML = `<textarea placeholder="杏として返信…"></textarea><button class="btn">送信</button>`;
+    f.innerHTML = `<textarea placeholder="えまとして返信…"></textarea><button class="btn">送信</button>`;
     c.appendChild(f);
     f.querySelector('button').addEventListener('click', async ()=>{
       const body = f.querySelector('textarea').value.trim(); if(!body) return;

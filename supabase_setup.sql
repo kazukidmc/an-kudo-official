@@ -1,5 +1,5 @@
 -- ============================================================
---  工藤 杏 公式サイト  Supabase セットアップ SQL
+--  えま 公式サイト  Supabase セットアップ SQL
 --  Supabase ダッシュボード → SQL Editor に貼り付けて [Run]
 -- ============================================================
 
@@ -7,19 +7,26 @@
 
 -- プロフィール（1行のみ・運営者が編集可）
 create table if not exists public.profile (
-  id         int primary key default 1,
-  name       text,
-  yomi       text,
-  nickname   text,
-  birthday   text,
-  sign       text,
-  origin     text,
-  hobby      text,
-  skill      text,
-  charm      text,
-  message    text,
+  id          int primary key default 1,
+  name        text,
+  age         text,
+  height      text,
+  bwh         text,
+  cup         text,
+  blood       text,
+  visual      text,
+  personality text,
+  hobby       text,
+  skill       text,
+  likes       text,
+  charm       text,
+  shop        text,
+  service     text,
+  reserve     text,
+  message     text,
   twitter_url text,
-  updated_at timestamptz default now(),
+  heaven_url  text,
+  updated_at  timestamptz default now(),
   constraint single_row check (id = 1)
 );
 
@@ -93,11 +100,11 @@ create policy "media_admin_update" on storage.objects for update to authenticate
 create policy "media_admin_delete" on storage.objects for delete to authenticated using (bucket_id = 'media');
 
 -- ---------- プロフィール初期データ ----------
-insert into public.profile (id,name,yomi,nickname,birthday,sign,origin,hobby,skill,charm,message,twitter_url)
-values (1,'工藤 杏','くどう あん','あんぼお','1999.07.15','かに座','秋田県',
-  'パチンコ','パチンコ ♡','プリティおけつ ♡',
-  E'いつも応援ありがとう♡\n今日もあんぼおと一緒に異世界RUSHを駆け抜けよ！\n何度だって、キミに会いに行くからね。ﾆｬﾝ♡',
-  'https://x.com/qsq_fks')
+insert into public.profile (id,name,age,height,bwh,cup,blood,visual,personality,hobby,skill,likes,charm,shop,service,reserve,twitter_url,heaven_url)
+values (1,'えま','永遠の21歳','149cm','B88 W56 H86','Eカップ❤','B型','むちむちぷりてぃがーる',
+  '明るい、えっちなお姉さん','旅行、ぎゃんぶる、散歩','ニャンちゅうのモノマネ、騎♡位','炭水化物','おしりのﾎｸﾛ',
+  '萌えフードル学園大宮本校','甘々いちゃいちゃからすんごいやつまで！','シティヘブンから',
+  'https://x.com/MOE_Emachi','https://www.cityheaven.net/saitama/A1101/A110101/moegaku/girlid-44311496/')
 on conflict (id) do nothing;
 
 -- 完了！
