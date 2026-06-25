@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工藤 杏 ｜ あんぼお 公式サイト ✦ MoEGaKu</title>
+<meta name="description" content="MoEGaKu所属アイドル「工藤 杏（あんぼお）」公式サイト。ギャラリー・日記・コメント。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 背景 -->
+<div class="bg-wrap">
+  <canvas id="fx"></canvas>
+  <div class="bg-sky"></div>
+  <div class="mcircle bg-circle one"><span></span><span></span><span></span><b></b></div>
+  <div class="mcircle bg-circle two"><span></span><span></span><span></span><b></b></div>
+  <div class="bg-stars" id="bgStars"></div>
+</div>
+
+<!-- ナビ -->
+<nav class="nav">
+  <a class="nav-logo" href="#top">工藤 杏</a>
+  <div class="nav-links">
+    <a href="#profile">PROFILE</a>
+    <a href="#gallery">GALLERY</a>
+    <a href="#diary">DIARY</a>
+    <a href="#comments">COMMENT</a>
+  </div>
+</nav>
+
+<!-- ヒーロー -->
+<header class="hero" id="top">
+  <div class="hero-stage">
+    <div class="mcircle hero-circle"><span></span><span></span><span></span><b></b></div>
+    <div class="hero-media">
+      <img class="hero-img" src="images/photo1.jpg" alt="工藤杏 メインビジュアル">
+      <div class="hero-grad"></div>
+      <div class="hero-shimmer"></div>
+    </div>
+  </div>
+  <div class="hero-info">
+    <p class="hero-tag">MoEGaKu　／　精霊アイドル「杏」</p>
+    <h1 class="hero-name">工藤 <span>杏</span></h1>
+    <p class="hero-en">A N &nbsp; K U D O ／ "AMBO"</p>
+  </div>
+  <div class="scroll-cue"><span></span>SCROLL</div>
+</header>
+
+<main>
+
+<!-- プロフィール -->
+<section class="section profile" id="profile">
+  <h2 class="sec-title" data-num="I"><span class="en">PROFILE</span><span class="jp">― 契約者情報 ―</span></h2>
+  <div class="profile-wrap">
+    <div class="profile-pic">
+      <img src="images/photo2.jpg" alt="工藤杏 プロフィール写真" id="profilePic">
+      <span class="pic-frame"></span>
+      <span class="pic-label">CONTRACT</span>
+    </div>
+    <div class="profile-side">
+      <dl class="profile-data" id="profileData"><!-- JSで描画 --></dl>
+      <p class="profile-msg" id="profileMsg"></p>
+      <button class="admin-only btn-ghost" id="editProfileBtn">✎ プロフィールを編集</button>
+    </div>
+  </div>
+</section>
+
+<!-- ギャラリー -->
+<section class="section gallery" id="gallery">
+  <h2 class="sec-title" data-num="II"><span class="en">GALLERY</span><span class="jp">― 記憶の結晶 ―</span></h2>
+
+  <div class="admin-only admin-panel" id="uploadPanel">
+    <p class="panel-head">⬆ 写真・動画をアップロード</p>
+    <div class="upload-row">
+      <input type="file" id="mediaFile" accept="image/*,video/*">
+      <input type="text" id="mediaCaption" placeholder="キャプション（任意）" maxlength="60">
+      <button class="btn" id="uploadBtn">追加</button>
+    </div>
+    <p class="upload-status" id="uploadStatus"></p>
+  </div>
+
+  <div class="gallery-grid" id="galleryGrid">
+    <!-- JSで描画。未設定時はサンプル -->
+    <figure class="g-item" data-type="image" data-src="images/photo1.jpg"><img src="images/photo1.jpg" alt=""><figcaption>浴衣 ─ YUKATA</figcaption></figure>
+    <figure class="g-item" data-type="image" data-src="images/photo3.jpg"><img src="images/photo3.jpg" alt=""><figcaption>放課後 ─ SCHOOL</figcaption></figure>
+    <figure class="g-item" data-type="image" data-src="images/photo4.jpg"><img src="images/photo4.jpg" alt=""><figcaption>おでかけ ─ OUTING</figcaption></figure>
+    <figure class="g-item" data-type="image" data-src="images/photo5.jpg"><img src="images/photo5.jpg" alt=""><figcaption>ステージ ─ STAGE</figcaption></figure>
+    <figure class="g-item" data-type="image" data-src="images/photo2.jpg"><img src="images/photo2.jpg" alt=""><figcaption>自然体 ─ NATURAL</figcaption></figure>
+  </div>
+  <p class="empty-note" id="galleryEmpty" hidden>まだ投稿がありません。</p>
+</section>
+
+<!-- 日記 -->
+<section class="section diary" id="diary">
+  <h2 class="sec-title" data-num="III"><span class="en">DIARY</span><span class="jp">― 杏のひとこと ―</span></h2>
+
+  <div class="admin-only admin-panel" id="diaryPanel">
+    <p class="panel-head">✎ ひとこと・日記を書く</p>
+    <textarea id="diaryInput" placeholder="今日のひとこと…" maxlength="500"></textarea>
+    <button class="btn" id="diaryPostBtn">投稿</button>
+  </div>
+
+  <div class="diary-feed" id="diaryFeed"></div>
+  <p class="empty-note" id="diaryEmpty" hidden>まだ投稿がありません。</p>
+</section>
+
+<!-- コメント -->
+<section class="section comments" id="comments">
+  <h2 class="sec-title" data-num="IV"><span class="en">COMMENT</span><span class="jp">― 杏への手紙 ―</span></h2>
+
+  <form class="comment-form" id="commentForm">
+    <input type="text" id="commentName" placeholder="お名前（任意・空欄なら名無し）" maxlength="24">
+    <textarea id="commentBody" placeholder="杏へのメッセージを書いてね♡（だれでも書けます）" maxlength="500" required></textarea>
+    <button class="btn" type="submit">コメントする</button>
+    <span class="form-note">※返信できるのは運営者のみです</span>
+  </form>
+
+  <div class="comment-list" id="commentList"></div>
+  <p class="empty-note" id="commentEmpty" hidden>最初のコメントを書いてみよう！</p>
+</section>
+
+<!-- SNS -->
+<section class="section sns" id="sns">
+  <h2 class="sec-title" data-num="V"><span class="en">CONNECT</span><span class="jp">― 契約の門 ―</span></h2>
+  <a class="sns-btn" id="snsBtn" href="https://x.com/qsq_fks" target="_blank" rel="noopener">
+    <span class="x-logo">𝕏</span>
+    <span class="sns-info"><b>@qsq_fks</b><small>ﾈｺと和解せよ</small></span>
+    <span class="sns-arrow">✦</span>
+  </a>
+</section>
+
+</main>
+
+<footer class="footer">
+  <div class="mcircle footer-circle"><span></span><span></span><b></b></div>
+  <p class="footer-name">工藤 杏 — あんぼお</p>
+  <p class="footer-grp">MoEGaKu OFFICIAL SITE</p>
+  <p class="footer-cat">🐾 ﾈｺと和解せよ 🐾</p>
+</footer>
+
+<!-- ライトボックス（大画面表示） -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lbClose">✕</button>
+  <div class="lb-inner" id="lbInner"></div>
+</div>
+
+<!-- 管理ログイン -->
+<button class="admin-fab" id="adminFab" title="運営者ログイン">🔑</button>
+<div class="modal" id="loginModal">
+  <div class="modal-box">
+    <p class="modal-title">運営者ログイン</p>
+    <input type="password" id="adminPass" placeholder="合言葉パスワード">
+    <p class="modal-err" id="loginErr"></p>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="loginCancel">閉じる</button>
+      <button class="btn" id="loginBtn">ログイン</button>
+    </div>
+  </div>
+</div>
+
+<!-- プロフィール編集 -->
+<div class="modal" id="profileModal">
+  <div class="modal-box wide">
+    <p class="modal-title">プロフィール編集</p>
+    <div class="pe-grid" id="peGrid"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="peCancel">閉じる</button>
+      <button class="btn" id="peSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="admin-badge admin-only" id="adminBadge">🛠 管理モード中</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
