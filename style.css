@@ -7,6 +7,7 @@
   --panel:rgba(244,248,255,.07); --panel2:rgba(244,248,255,.04); --line:rgba(183,160,255,.35);
   --fant:'Cinzel',serif; --cor:'Cormorant Garamond',serif; --min:'Shippori Mincho B1',serif;
   --jp:'Zen Kaku Gothic New',sans-serif; --dot:'DotGothic16',monospace;
+  --impact:'Dela Gothic One',sans-serif;
 }
 *{ margin:0; padding:0; box-sizing:border-box; }
 html{ scroll-behavior:smooth; }
@@ -222,6 +223,71 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 
 /* ギャラリー横スクロールのヒント */
 .scroll-hint{ text-align:center; font-family:var(--dot); font-size:12px; color:var(--sky); margin:-22px 0 14px; opacity:.85; letter-spacing:1px; }
+
+/* ============================================================
+   入場ゲート（銀玉→へそ入賞→先バレ→ENTER）
+   ============================================================ */
+.gate{ position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 38%, #1a1145 0%, #06031a 78%); transition:opacity .7s ease, visibility .7s; }
+.gate.hide{ opacity:0; visibility:hidden; }
+.gate-inner{ position:relative; width:min(90vw,400px); display:flex; flex-direction:column; align-items:center; gap:16px; }
+.gate-cap{ font-family:var(--fant); font-weight:800; letter-spacing:6px; color:var(--gold); font-size:13px; text-shadow:0 0 12px var(--gold); }
+
+/* 盤面 */
+.board{ position:relative; width:min(86vw,360px); height:min(56vh,420px); border-radius:18px; overflow:hidden;
+  background:radial-gradient(circle at 50% 28%, #2a1c5e, #120a2e 72%); border:2px solid var(--emilia);
+  box-shadow:0 0 30px rgba(183,160,255,.4), inset 0 0 40px rgba(0,0,0,.6); }
+.board::before{ content:""; position:absolute; inset:0; opacity:.45;
+  background-image:radial-gradient(rgba(255,255,255,.28) 1.4px, transparent 2px); background-size:34px 34px; }
+.board::after{ content:""; position:absolute; left:8%; right:8%; top:6%; height:40%; border:2px solid rgba(143,210,255,.35);
+  border-bottom:none; border-radius:50% 50% 0 0; box-shadow:0 0 14px rgba(143,210,255,.25); }
+
+/* 銀玉 */
+.ball{ position:absolute; width:18px; height:18px; border-radius:50%; top:5%; left:46%; z-index:3;
+  background:radial-gradient(circle at 35% 30%, #fff, #d2d8e6 38%, #8a93a8 70%, #565d70);
+  box-shadow:0 0 8px rgba(255,255,255,.6), inset -2px -2px 4px rgba(0,0,0,.5); }
+.ball.rolling{ animation:ballRoll 2.6s cubic-bezier(.5,.03,.6,.98) forwards; }
+@keyframes ballRoll{
+  0%{ top:4%; left:46%; } 20%{ top:24%; left:26%; } 38%{ top:40%; left:60%; }
+  56%{ top:54%; left:34%; } 72%{ top:66%; left:56%; } 86%{ top:74%; left:46%; } 100%{ top:78%; left:48%; }
+}
+.board.won .ball{ opacity:0; transition:opacity .15s .05s; }
+
+/* へそ（チューリップ＋ポケット） */
+.heso{ position:absolute; bottom:13%; left:50%; transform:translateX(-50%); z-index:2; display:flex; align-items:flex-end; gap:1px; }
+.pocket{ width:30px; height:20px; border:2px solid var(--gold); border-top:none; border-radius:0 0 16px 16px;
+  background:linear-gradient(180deg, rgba(255,224,138,.15), rgba(255,224,138,.4)); box-shadow:0 0 10px var(--gold); }
+.tulip{ width:12px; height:20px; background:linear-gradient(180deg,#ffd24d,#ff9c1a); border-radius:7px 7px 2px 2px;
+  box-shadow:0 0 8px #ffae33; transform-origin:bottom; transition:transform .2s; }
+.tulip.l{ transform:rotate(16deg); } .tulip.r{ transform:rotate(-16deg); }
+.heso-label{ position:absolute; bottom:-20px; left:50%; transform:translateX(-50%); font-family:var(--dot); font-size:11px; color:var(--gold); letter-spacing:2px; }
+.board.won .tulip.l{ transform:rotate(42deg); } .board.won .tulip.r{ transform:rotate(-42deg); }
+.board.won .pocket{ animation:hesoFlash .22s steps(2) 5; }
+@keyframes hesoFlash{ 0%,100%{ box-shadow:0 0 10px var(--gold);} 50%{ box-shadow:0 0 28px #fff, 0 0 44px var(--gold);} }
+
+/* 先バレ（激アツ・赤） */
+.sakibare{ position:absolute; inset:-4% -4% 12%; z-index:5; display:flex; flex-direction:column; align-items:center; justify-content:center; opacity:0; pointer-events:none; }
+.sakibare.show{ opacity:1; }
+.sb-burst{ position:absolute; inset:0; border-radius:18px; }
+.sakibare.show .sb-burst{ animation:sbBurst 1.1s ease-out; }
+@keyframes sbBurst{ 0%{ background:radial-gradient(circle, rgba(255,45,55,.95), rgba(170,0,12,.9)); transform:scale(.2); opacity:1; }
+  35%{ transform:scale(1); } 100%{ background:radial-gradient(circle, rgba(255,45,55,0), rgba(170,0,12,0)); transform:scale(1.12); opacity:1; } }
+.sb-text{ position:relative; font-family:var(--impact); font-size:clamp(40px,13vw,76px); color:#fff; letter-spacing:6px;
+  text-shadow:0 0 16px #ff2030, 0 0 42px #ff0018, 3px 3px 0 #7a0008; transform:scale(.3); opacity:0; }
+.sakibare.show .sb-text{ animation:sbPop .5s .1s cubic-bezier(.2,1.7,.4,1) forwards; }
+@keyframes sbPop{ to{ transform:scale(1); opacity:1; } }
+.sb-sub{ position:relative; margin-top:8px; font-family:var(--impact); font-size:clamp(15px,5vw,26px); color:#ffd24d; letter-spacing:5px;
+  text-shadow:0 0 12px #ffb020, 0 0 24px #ff5; opacity:0; }
+.sakibare.show .sb-sub{ animation:fadeUp .4s .5s forwards; }
+@keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;} }
+
+/* ENTER ボタン */
+.gate-enter{ opacity:0; pointer-events:none; transform:translateY(8px); font-family:var(--fant); font-weight:800; font-size:20px; letter-spacing:5px;
+  color:var(--night); background:linear-gradient(180deg,#fff,var(--gold)); border:none; padding:14px 52px; border-radius:40px; cursor:pointer;
+  box-shadow:0 0 26px var(--gold), 0 0 60px rgba(255,46,139,.4); transition:opacity .4s, transform .4s; }
+.gate-enter.show{ opacity:1; pointer-events:auto; transform:none; animation:enterPulse 1.6s ease-in-out infinite; }
+@keyframes enterPulse{ 0%,100%{ box-shadow:0 0 22px var(--gold), 0 0 50px rgba(255,46,139,.35);} 50%{ box-shadow:0 0 40px #fff, 0 0 72px var(--rose);} }
+.gate-enter:active{ transform:translateY(2px); }
 
 /* ============================================================
    パチンコ UI（図柄リール区切り / 機種スペック表 / 7セグLEDカウンター）

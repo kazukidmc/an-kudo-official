@@ -7,11 +7,33 @@
 <meta name="description" content="萌えフードル学園 大宮本校「えま」公式サイト。プロフィール・ギャラリー・日記・コメント。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Share+Tech+Mono&family=DotGothic16&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Dela+Gothic+One&family=Share+Tech+Mono&family=DotGothic16&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+<!-- ===== 入場ゲート（銀玉→へそ入賞→先バレ→ENTER） ===== -->
+<div id="gate" class="gate">
+  <div class="gate-inner">
+    <p class="gate-cap">ENTRANCE</p>
+    <div class="board" id="board">
+      <div class="ball" id="ball"></div>
+      <div class="heso">
+        <span class="tulip l"></span>
+        <span class="pocket"></span>
+        <span class="tulip r"></span>
+        <span class="heso-label">へそ</span>
+      </div>
+    </div>
+    <div class="sakibare" id="sakibare">
+      <div class="sb-burst"></div>
+      <div class="sb-text">先 バ レ</div>
+      <div class="sb-sub">激 ア ツ ！</div>
+    </div>
+    <button class="gate-enter" id="gateEnter"><span>▶ ENTER</span></button>
+  </div>
+</div>
 
 <!-- 背景 -->
 <div class="bg-wrap">

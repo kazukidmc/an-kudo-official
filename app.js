@@ -45,6 +45,68 @@ function setLED(id, n){
 }
 injectReelBands();
 
+/* ---------- 「ぽきゅーん」合成音（大都系オマージュ・Web Audio） ---------- */
+function playPokyun(ctx){
+  let ac = ctx;
+  try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){ return; }
+  if(!ac) return;
+  if(ac.state === 'suspended') ac.resume();
+  const now = ac.currentTime;
+  const master = ac.createGain(); master.gain.value = 0.4; master.connect(ac.destination);
+  const osc = ac.createOscillator(); osc.type = 'triangle';
+  const og = ac.createGain();
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass';
+  lp.frequency.setValueAtTime(800, now); lp.frequency.exponentialRampToValueAtTime(5200, now+0.18);
+  osc.connect(og); og.connect(lp); lp.connect(master);
+  osc.frequency.setValueAtTime(430, now);
+  osc.frequency.exponentialRampToValueAtTime(300, now+0.045);
+  osc.frequency.exponentialRampToValueAtTime(1080, now+0.17);
+  osc.frequency.exponentialRampToValueAtTime(900,  now+0.34);
+  const lfo = ac.createOscillator(); lfo.frequency.value = 15;
+  const lfoG = ac.createGain(); lfoG.gain.value = 26; lfo.connect(lfoG); lfoG.connect(osc.frequency);
+  og.gain.setValueAtTime(0, now); og.gain.linearRampToValueAtTime(1.0, now+0.02); og.gain.exponentialRampToValueAtTime(0.0001, now+0.8);
+  const o2 = ac.createOscillator(); o2.type = 'sine'; const g2 = ac.createGain(); o2.connect(g2); g2.connect(master);
+  o2.frequency.setValueAtTime(1700, now+0.12); o2.frequency.exponentialRampToValueAtTime(2800, now+0.32);
+  g2.gain.setValueAtTime(0, now+0.12); g2.gain.linearRampToValueAtTime(0.22, now+0.16); g2.gain.exponentialRampToValueAtTime(0.0001, now+0.55);
+  osc.start(now); o2.start(now+0.1); lfo.start(now);
+  osc.stop(now+0.85); o2.stop(now+0.6); lfo.stop(now+0.85);
+  if(!ctx) setTimeout(()=>{ try{ ac.close(); }catch(_){} }, 1200);
+}
+
+/* ---------- 入場ゲート：銀玉→へそ入賞→先バレ→ENTER ---------- */
+(function gate(){
+  const gate = $('#gate'); if(!gate) return;
+  const ball = $('#ball'), board = $('#board'), sbare = $('#sakibare'), enter = $('#gateEnter');
+  document.body.style.overflow = 'hidden';
+
+  // 音アンロック（ブラウザの自動再生制限対策：最初の操作でAudioContextを準備）
+  let ac = null;
+  function ensureAudio(){
+    try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){}
+    if(ac && ac.state === 'suspended') ac.resume();
+  }
+  ['pointerdown','touchstart','keydown'].forEach(ev => window.addEventListener(ev, ensureAudio, { passive:true }));
+
+  // 1) 銀玉が転がる
+  setTimeout(()=> ball && ball.classList.add('rolling'), 300);
+  // 2) へそ入賞 → ぽきゅーん＋先バレ（赤・激アツ）
+  setTimeout(()=>{
+    board && board.classList.add('won');
+    sbare && sbare.classList.add('show');
+    playPokyun(ac);
+  }, 300 + 2600);
+  // 3) ENTER 出現
+  setTimeout(()=> enter && enter.classList.add('show'), 300 + 2600 + 750);
+
+  function go(){
+    ensureAudio(); playPokyun(ac);          // 入場時にも必ず鳴らす（操作直後で確実）
+    gate.classList.add('hide');
+    document.body.style.overflow = '';
+    setTimeout(()=> gate.remove(), 800);
+  }
+  enter && enter.addEventListener('click', go);
+})();
+
 /* ---------- 背景：星 & 光の粒子 ---------- */
 (function stars(){
   const w = $('#bgStars'); let h='';
