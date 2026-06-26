@@ -94,7 +94,10 @@ const DEFAULT_PROFILE = {
   charm:'おしりのﾎｸﾛ', shop:'萌えフードル学園大宮本校', service:'甘々いちゃいちゃからすんごいやつまで！',
   reserve:'シティヘブンから',
   twitter_url:'https://x.com/MOE_Emachi',
-  heaven_url:'https://www.cityheaven.net/saitama/A1101/A110101/moegaku/girlid-44311496/'
+  heaven_url:'https://www.cityheaven.net/saitama/A1101/A110101/moegaku/girlid-44311496/',
+  hero_url:'images/photo1.jpg',      // トップ写真（運営が変更可）
+  profile_url:'images/photo2.jpg',   // プロフィール写真（運営が変更可）
+  recommends:[]                      // おすすめ商品（アフィリエイト）
 };
 let profileCache = {...DEFAULT_PROFILE};
 
@@ -117,7 +120,89 @@ function renderProfile(p){
   $('#profileData').innerHTML = rows.map(r=>`<div><dt>${r[0]}</dt><dd>${r[1]}</dd></div>`).join('');
   if(p.twitter_url){ $('#snsBtn').href = p.twitter_url; }
   if(p.heaven_url){ const h=$('#heavenBtn'); if(h) h.href = p.heaven_url; }
+  // トップ写真・プロフィール写真（運営が変更したURL）
+  const hero = $('.hero-img'); if(hero && p.hero_url && hero.getAttribute('src') !== p.hero_url) hero.src = p.hero_url;
+  const ppic = $('#profilePic'); if(ppic && p.profile_url && ppic.getAttribute('src') !== p.profile_url) ppic.src = p.profile_url;
+  renderRecommends(Array.isArray(p.recommends) ? p.recommends : []);
 }
+
+/* ---------- プロフィールJSONの保存（画像・おすすめ共通） ---------- */
+async function saveProfile(){
+  if(!sb){ toast('保存にはSupabase接続が必要です'); return false; }
+  const { error } = await sb.from('profile').update({ message: JSON.stringify(profileCache), updated_at: new Date().toISOString() }).eq('id',1);
+  if(error){ toast('保存に失敗: '+error.message); return false; }
+  return true;
+}
+
+/* ---------- トップ／プロフィール写真の変更（運営） ---------- */
+function changeImage(targetKey){
+  if(!requireBackend()) return;
+  const inp = document.createElement('input'); inp.type='file'; inp.accept='image/*';
+  inp.onchange = async ()=>{
+    const file = inp.files[0]; if(!file) return;
+    toast('アップロード中…');
+    try{
+      const path = `prof_${Date.now()}_${file.name.replace(/[^\w.\-]/g,'_')}`;
+      const { error:upErr } = await sb.storage.from('media').upload(path, file, { cacheControl:'3600', upsert:false });
+      if(upErr) throw upErr;
+      const { data:{ publicUrl } } = sb.storage.from('media').getPublicUrl(path);
+      profileCache[targetKey] = publicUrl;
+      if(await saveProfile()){ toast('写真を変更しました'); renderProfile(profileCache); }
+    }catch(e){ toast('失敗: '+e.message); }
+  };
+  inp.click();
+}
+$('#heroEditBtn') && $('#heroEditBtn').addEventListener('click', ()=> changeImage('hero_url'));
+$('#profEditBtn') && $('#profEditBtn').addEventListener('click', ()=> changeImage('profile_url'));
+
+/* ---------- おすすめ（アフィリエイト） ---------- */
+function renderRecommends(list){
+  const wrap = $('#recommendList'); if(!wrap) return;
+  if(!list.length){ wrap.innerHTML=''; $('#recoEmpty').hidden=false; $('#recoHint').hidden=true; return; }
+  $('#recoEmpty').hidden = true;
+  $('#recoHint').hidden = (list.length < 2);
+  wrap.innerHTML = list.map((r,i)=>{
+    const img = r.img ? `<img class="reco-img" src="${esc(r.img)}" alt="" loading="lazy">` : '';
+    const del = `<button class="del-btn admin-only" data-del-reco="${i}">削除</button>`;
+    return `<a class="reco-card" href="${esc(r.url)}" target="_blank" rel="noopener nofollow sponsored">
+      ${img}
+      <div class="reco-body"><div class="reco-title">${esc(r.title) || '商品を見る'}</div><span class="reco-cta">▶ 見てみる</span></div>
+      ${del}
+    </a>`;
+  }).join('');
+}
+$('#recoAddBtn') && $('#recoAddBtn').addEventListener('click', async ()=>{
+  if(!requireBackend()) return;
+  const title = $('#recoTitle').value.trim();
+  const url = $('#recoUrl').value.trim();
+  if(!/^https?:\/\//.test(url)){ toast('アフィリエイトURL（https://…）を入れてください'); return; }
+  const btn = $('#recoAddBtn'); btn.disabled = true; const st = $('#recoStatus'); st.textContent = '追加中…';
+  try{
+    let img = $('#recoImg').value.trim();
+    const file = $('#recoFile').files[0];
+    if(file){
+      const path = `reco_${Date.now()}_${file.name.replace(/[^\w.\-]/g,'_')}`;
+      const { error:upErr } = await sb.storage.from('media').upload(path, file, { cacheControl:'3600', upsert:false });
+      if(upErr) throw upErr;
+      img = sb.storage.from('media').getPublicUrl(path).data.publicUrl;
+    }
+    if(!Array.isArray(profileCache.recommends)) profileCache.recommends = [];
+    profileCache.recommends.unshift({ url, title, img });
+    if(await saveProfile()){
+      st.textContent='完了！'; $('#recoTitle').value=''; $('#recoUrl').value=''; $('#recoImg').value=''; $('#recoFile').value='';
+      toast('おすすめを追加しました'); renderRecommends(profileCache.recommends);
+    }
+  }catch(e){ st.textContent='失敗: '+e.message; toast('追加に失敗'); }
+  finally{ btn.disabled=false; setTimeout(()=> st.textContent='', 4000); }
+});
+$('#recommendList') && $('#recommendList').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-del-reco]'); if(!b) return;
+  e.preventDefault();
+  if(!confirm('このおすすめを削除しますか？')) return;
+  const i = parseInt(b.dataset.delReco, 10);
+  if(Array.isArray(profileCache.recommends)){ profileCache.recommends.splice(i,1);
+    if(await saveProfile()){ toast('削除しました'); renderRecommends(profileCache.recommends); } }
+});
 
 // プロフィール編集（全項目「任意」＝空欄のまま保存してもOK）
 $('#editProfileBtn').addEventListener('click', ()=>{
@@ -134,13 +219,8 @@ $('#editProfileBtn').addEventListener('click', ()=>{
 });
 $('#peCancel').addEventListener('click', ()=> $('#profileModal').classList.remove('show'));
 $('#peSave').addEventListener('click', async ()=>{
-  if(!sb){ toast('保存にはSupabase接続が必要です'); return; }
-  const obj = {...profileCache};
-  $$('#peGrid [data-k]').forEach(el=> obj[el.dataset.k] = el.value.trim());
-  const { error } = await sb.from('profile')
-    .update({ message: JSON.stringify(obj), updated_at: new Date().toISOString() }).eq('id',1);
-  if(error){ toast('保存に失敗: '+error.message); return; }
-  $('#profileModal').classList.remove('show'); toast('プロフィールを更新しました'); loadProfile();
+  $$('#peGrid [data-k]').forEach(el=> profileCache[el.dataset.k] = el.value.trim());
+  if(await saveProfile()){ $('#profileModal').classList.remove('show'); toast('プロフィールを更新しました'); loadProfile(); }
 });
 
 /* ---------- ギャラリー ---------- */

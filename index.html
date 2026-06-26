@@ -46,6 +46,7 @@
     <p class="hero-tag">萌えフードル学園 大宮本校</p>
     <h1 class="hero-name">え<span>ま</span></h1>
     <p class="hero-en">E &nbsp; M &nbsp; A</p>
+    <button class="admin-only btn-ghost img-edit" id="heroEditBtn">📷 トップ写真を変更</button>
   </div>
   <div class="scroll-cue"><span></span>SCROLL</div>
 </header>
@@ -64,7 +65,10 @@
     <div class="profile-side">
       <dl class="profile-data" id="profileData"><!-- JSで描画 --></dl>
       <p class="profile-msg" id="profileMsg"></p>
-      <button class="admin-only btn-ghost" id="editProfileBtn">✎ プロフィールを編集</button>
+      <div class="admin-only admin-btn-row">
+        <button class="btn-ghost" id="editProfileBtn">✎ プロフィールを編集</button>
+        <button class="btn-ghost img-edit" id="profEditBtn">📷 写真を変更</button>
+      </div>
     </div>
   </div>
 </section>
@@ -125,9 +129,31 @@
   <p class="empty-note" id="commentEmpty" hidden>最初のコメントを書いてみよう！</p>
 </section>
 
+<!-- おすすめ（アフィリエイト） -->
+<section class="section recommend" id="recommend">
+  <h2 class="sec-title" data-num="V"><span class="en">RECOMMEND</span><span class="jp">― えまのおすすめ ―</span></h2>
+
+  <div class="admin-only admin-panel" id="recoPanel">
+    <p class="panel-head">⬆ おすすめ商品を追加（Amazon等のアフィリエイト）</p>
+    <input type="text" id="recoTitle" placeholder="商品名・ひとこと説明" maxlength="80">
+    <input type="text" id="recoUrl" placeholder="アフィリエイトURL（https://… 必須）">
+    <div class="upload-row">
+      <input type="file" id="recoFile" accept="image/*">
+      <input type="text" id="recoImg" placeholder="または 商品画像URL（任意）">
+      <button class="btn" id="recoAddBtn">追加</button>
+    </div>
+    <p class="upload-status" id="recoStatus"></p>
+  </div>
+
+  <p class="scroll-hint" id="recoHint" hidden>← よこにスクロールで見てね →</p>
+  <div class="recommend-list" id="recommendList"></div>
+  <p class="empty-note" id="recoEmpty" hidden>まだおすすめがありません。</p>
+  <p class="reco-disclosure">※当サイトはアフィリエイト広告（Amazonアソシエイト等）を利用しています。</p>
+</section>
+
 <!-- SNS / 予約 -->
 <section class="section sns" id="sns">
-  <h2 class="sec-title" data-num="V"><span class="en">CONNECT</span><span class="jp">― つながる ―</span></h2>
+  <h2 class="sec-title" data-num="VI"><span class="en">CONNECT</span><span class="jp">― つながる ―</span></h2>
   <div class="sns-btns">
     <a class="sns-btn" id="snsBtn" href="https://x.com/MOE_Emachi" target="_blank" rel="noopener">
       <span class="x-logo">𝕏</span>

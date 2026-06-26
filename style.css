@@ -225,3 +225,23 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 
 /* ギャラリー横スクロールのヒント */
 .scroll-hint{ text-align:center; font-family:var(--dot); font-size:12px; color:var(--sky); margin:-22px 0 14px; opacity:.85; letter-spacing:1px; }
+
+/* 運営：画像変更ボタン行 */
+.admin-btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+.img-edit{ /* btn-ghost のスタイルを利用 */ }
+#heroEditBtn{ margin-top:16px; }
+
+/* おすすめ（アフィリエイト） */
+#recoTitle, #recoUrl{ display:block; width:100%; margin-bottom:10px; }
+.recommend-list{ display:flex; flex-direction:row; gap:16px; overflow-x:auto; overflow-y:hidden; padding:6px 2px 14px; scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--gold) rgba(255,255,255,.08); }
+.recommend-list::-webkit-scrollbar{ height:8px; }
+.recommend-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.06); border-radius:10px; }
+.recommend-list::-webkit-scrollbar-thumb{ background:linear-gradient(90deg,var(--gold),var(--rose)); border-radius:10px; }
+.reco-card{ flex:0 0 auto; width:min(64vw,210px); scroll-snap-align:start; position:relative; display:block; text-decoration:none; background:var(--panel); border:1px solid var(--line); border-radius:14px; overflow:hidden; transition:transform .25s, box-shadow .25s, border-color .25s; }
+.reco-card:hover{ transform:translateY(-4px); border-color:var(--gold); box-shadow:0 0 24px rgba(255,224,138,.45); }
+.reco-card .reco-img{ width:100%; height:170px; object-fit:contain; background:#fff; display:block; }
+.reco-card .reco-body{ padding:12px 12px 14px; }
+.reco-card .reco-title{ font-family:var(--jp); font-weight:700; font-size:13px; color:var(--white); line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.reco-card .reco-cta{ margin-top:10px; display:inline-block; font-family:var(--fant); font-weight:800; font-size:11px; letter-spacing:1px; color:var(--night); background:linear-gradient(180deg,#fff,var(--gold)); padding:6px 14px; border-radius:20px; }
+.reco-card .del-btn{ position:absolute; top:8px; right:8px; z-index:3; }
+.reco-disclosure{ text-align:center; font-family:var(--dot); font-size:10px; color:var(--dim); margin-top:14px; letter-spacing:.5px; }
