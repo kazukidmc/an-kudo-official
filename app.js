@@ -73,38 +73,74 @@ function playPokyun(ctx){
   if(!ctx) setTimeout(()=>{ try{ ac.close(); }catch(_){} }, 1200);
 }
 
-/* ---------- 入場ゲート：銀玉→へそ入賞→先バレ→ENTER ---------- */
+/* ---------- 入場SE：ローカル音源(あれば)＞重厚リバーブ合成音 ---------- */
+function makeReverb(ac, seconds, decay){
+  const rate = ac.sampleRate, len = Math.floor(rate*seconds);
+  const imp = ac.createBuffer(2, len, rate);
+  for(let ch=0; ch<2; ch++){ const d = imp.getChannelData(ch);
+    for(let i=0;i<len;i++){ d[i] = (Math.random()*2-1)*Math.pow(1-i/len, decay); } }
+  const c = ac.createConvolver(); c.buffer = imp; return c;
+}
+function playGreedSE(ctx){
+  let ac = ctx;
+  try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){ return; }
+  if(!ac) return; if(ac.state==='suspended') ac.resume();
+  const now = ac.currentTime;
+  const out = ac.createGain(); out.gain.value = 0.5; out.connect(ac.destination);
+  let verb=null; try{ verb = makeReverb(ac, 2.4, 2.8); }catch(_){}
+  const vg = ac.createGain(); vg.gain.value = 0.5; if(verb){ verb.connect(vg); vg.connect(out); }
+  const dry = ac.createGain(); dry.gain.value = 0.9; dry.connect(out);
+  const send = node => { node.connect(dry); if(verb) node.connect(verb); };
+  // 重低音インパクト（ドンッ）
+  const boom = ac.createOscillator(); boom.type='sine'; const bg = ac.createGain();
+  boom.frequency.setValueAtTime(180, now); boom.frequency.exponentialRampToValueAtTime(46, now+0.5);
+  bg.gain.setValueAtTime(0.0001, now); bg.gain.exponentialRampToValueAtTime(1.0, now+0.012); bg.gain.exponentialRampToValueAtTime(0.0001, now+0.7);
+  boom.connect(bg); send(bg); boom.start(now); boom.stop(now+0.75);
+  // 金属ライザー（シャキーン）
+  const r1 = ac.createOscillator(), r2 = ac.createOscillator(); r1.type='sawtooth'; r2.type='sawtooth'; r2.detune.value=12;
+  const rf = ac.createBiquadFilter(); rf.type='bandpass'; rf.Q.value=6;
+  rf.frequency.setValueAtTime(300, now); rf.frequency.exponentialRampToValueAtTime(5000, now+0.55);
+  const rg = ac.createGain(); rg.gain.setValueAtTime(0.0001, now); rg.gain.linearRampToValueAtTime(0.45, now+0.45); rg.gain.exponentialRampToValueAtTime(0.0001, now+0.85);
+  r1.connect(rf); r2.connect(rf); rf.connect(rg); send(rg); r1.start(now); r2.start(now); r1.stop(now+0.9); r2.stop(now+0.9);
+  // 閃光チャイム（確定音）
+  const t0 = now+0.5;
+  [1318.5,1760,2637].forEach((f,i)=>{ const o=ac.createOscillator(); o.type='triangle'; const g=ac.createGain();
+    o.frequency.setValueAtTime(f, t0); g.gain.setValueAtTime(0.0001, t0+i*0.02); g.gain.exponentialRampToValueAtTime(0.38, t0+0.03+i*0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+1.2);
+    o.connect(g); send(g); o.start(t0+i*0.02); o.stop(t0+1.3); });
+  // キラキラ余韻
+  for(let i=0;i<5;i++){ const o=ac.createOscillator(); o.type='sine'; const g=ac.createGain(); const tt=now+0.6+i*0.09;
+    o.frequency.setValueAtTime(2000+Math.random()*1800, tt); g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.15, tt+0.01); g.gain.exponentialRampToValueAtTime(0.0001, tt+0.4);
+    o.connect(g); send(g); o.start(tt); o.stop(tt+0.45); }
+  if(!ctx) setTimeout(()=>{ try{ ac.close(); }catch(_){} }, 3500);
+}
+// sounds/sakibare.mp3 を置くと優先再生（無ければ上の合成音）
+const _seFile = (()=>{ try{ const a = new Audio('sounds/sakibare.mp3'); a.preload='auto'; a.volume=0.9; return a; }catch(_){ return null; } })();
+let _seFileOk = false;
+if(_seFile){ _seFile.addEventListener('canplaythrough', ()=> _seFileOk = true); _seFile.addEventListener('error', ()=> _seFileOk = false); }
+function playEntranceSE(ac){
+  if(_seFileOk && _seFile){ try{ _seFile.currentTime = 0; const p = _seFile.play(); if(p && p.catch) p.catch(()=> playGreedSE(ac)); return; }catch(_){} }
+  playGreedSE(ac);
+}
+
+/* ---------- 入場ゲート（強欲）：PUSHで入場 ---------- */
 (function gate(){
   const gate = $('#gate'); if(!gate) return;
-  const ball = $('#ball'), board = $('#board'), sbare = $('#sakibare'), enter = $('#gateEnter');
   document.body.style.overflow = 'hidden';
-
-  // 音アンロック（ブラウザの自動再生制限対策：最初の操作でAudioContextを準備）
   let ac = null;
   function ensureAudio(){
     try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){}
-    if(ac && ac.state === 'suspended') ac.resume();
+    if(ac && ac.state==='suspended') ac.resume();
   }
   ['pointerdown','touchstart','keydown'].forEach(ev => window.addEventListener(ev, ensureAudio, { passive:true }));
 
-  // 1) 銀玉が転がる
-  setTimeout(()=> ball && ball.classList.add('rolling'), 300);
-  // 2) へそ入賞 → ぽきゅーん＋先バレ（赤・激アツ）
-  setTimeout(()=>{
-    board && board.classList.add('won');
-    sbare && sbare.classList.add('show');
-    playPokyun(ac);
-  }, 300 + 2600);
-  // 3) ENTER 出現
-  setTimeout(()=> enter && enter.classList.add('show'), 300 + 2600 + 750);
-
-  function go(){
-    ensureAudio(); playPokyun(ac);          // 入場時にも必ず鳴らす（操作直後で確実）
-    gate.classList.add('hide');
-    document.body.style.overflow = '';
-    setTimeout(()=> gate.remove(), 800);
+  const btn = $('#greedBtn');
+  function enterSite(){
+    ensureAudio(); playEntranceSE(ac);
+    gate.classList.add('flash');
+    setTimeout(()=>{ gate.classList.add('hide'); document.body.style.overflow=''; }, 280);
+    setTimeout(()=> gate.remove(), 1100);
   }
-  enter && enter.addEventListener('click', go);
+  btn && btn.addEventListener('click', enterSite);
 })();
 
 /* ---------- 背景：星 & 光の粒子 ---------- */
