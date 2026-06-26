@@ -26,6 +26,12 @@ function toast(msg){
   clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), 2600);
 }
 
+/* ---------- 画像のダウンロード抑止（右クリック/ドラッグ/長押し保存を防ぐ） ---------- */
+(function protectImages(){
+  document.addEventListener('contextmenu', e=>{ if(e.target && e.target.tagName === 'IMG') e.preventDefault(); }, { capture:true });
+  document.addEventListener('dragstart',   e=>{ if(e.target && e.target.tagName === 'IMG') e.preventDefault(); }, { capture:true });
+})();
+
 /* ---------- 背景：星 & 光の粒子 ---------- */
 (function stars(){
   const w = $('#bgStars'); let h='';
@@ -62,7 +68,7 @@ lb.addEventListener('click', e=>{ if(e.target === lb) closeLightbox(); });
 
 // ギャラリーのクリック（委譲：DB項目・サンプル両対応）
 $('#galleryGrid').addEventListener('click', e=>{
-  if(e.target.closest('.del-btn')) return;
+  if(e.target.closest('.del-btn, .mv-btn')) return;
   const item = e.target.closest('.g-item'); if(!item) return;
   openLightbox(item.dataset.type || 'image', item.dataset.src);
 });
@@ -163,11 +169,12 @@ function renderRecommends(list){
   $('#recoHint').hidden = (list.length < 2);
   wrap.innerHTML = list.map((r,i)=>{
     const img = r.img ? `<img class="reco-img" src="${esc(r.img)}" alt="" loading="lazy">` : '';
+    const mv  = `<div class="mv-bar admin-only"><button class="mv-btn" data-mv-reco="${i}" data-dir="-1" title="前へ">◀</button><button class="mv-btn" data-mv-reco="${i}" data-dir="1" title="後ろへ">▶</button></div>`;
     const del = `<button class="del-btn admin-only" data-del-reco="${i}">削除</button>`;
     return `<a class="reco-card" href="${esc(r.url)}" target="_blank" rel="noopener nofollow sponsored">
       ${img}
       <div class="reco-body"><div class="reco-title">${esc(r.title) || '商品を見る'}</div><span class="reco-cta">▶ 見てみる</span></div>
-      ${del}
+      ${mv}${del}
     </a>`;
   }).join('');
 }
@@ -196,12 +203,21 @@ $('#recoAddBtn') && $('#recoAddBtn').addEventListener('click', async ()=>{
   finally{ btn.disabled=false; setTimeout(()=> st.textContent='', 4000); }
 });
 $('#recommendList') && $('#recommendList').addEventListener('click', async e=>{
-  const b = e.target.closest('[data-del-reco]'); if(!b) return;
+  const mv  = e.target.closest('[data-mv-reco]');
+  const del = e.target.closest('[data-del-reco]');
+  if(!mv && !del) return;
   e.preventDefault();
+  const arr = Array.isArray(profileCache.recommends) ? profileCache.recommends : (profileCache.recommends = []);
+  if(mv){
+    const i = parseInt(mv.dataset.mvReco,10), dir = parseInt(mv.dataset.dir,10), j = i + dir;
+    if(j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    if(await saveProfile()){ toast('順番を変更しました'); renderRecommends(arr); }
+    return;
+  }
   if(!confirm('このおすすめを削除しますか？')) return;
-  const i = parseInt(b.dataset.delReco, 10);
-  if(Array.isArray(profileCache.recommends)){ profileCache.recommends.splice(i,1);
-    if(await saveProfile()){ toast('削除しました'); renderRecommends(profileCache.recommends); } }
+  arr.splice(parseInt(del.dataset.delReco,10), 1);
+  if(await saveProfile()){ toast('削除しました'); renderRecommends(arr); }
 });
 
 // プロフィール編集（全項目「任意」＝空欄のまま保存してもOK）
@@ -234,23 +250,26 @@ const SAMPLE_MEDIA = [
 function sampleGalleryHTML(){
   return SAMPLE_MEDIA.map(m=>`<figure class="g-item" data-type="image" data-src="${m.src}"><img src="${m.src}" alt="" loading="lazy"><figcaption>${m.cap}</figcaption></figure>`).join('');
 }
+let galleryData = [];   // 現在の表示順（並び替え用）
 async function loadGallery(){
   if(!sb) return; // デモ時はサンプルのまま
-  const { data, error } = await sb.from('media').select('*').order('created_at',{ascending:false});
+  const { data, error } = await sb.from('media').select('*').order('sort',{ascending:true}).order('created_at',{ascending:false});
   if(error){ console.warn(error); return; }
   const grid = $('#galleryGrid');
-  if(!data.length){ grid.innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true; return; }
+  if(!data.length){ grid.innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true; galleryData = []; return; }
+  galleryData = data;
   $('#galleryEmpty').hidden = true;
   grid.innerHTML = data.map(m=>{
     const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
+    const mv  = `<div class="mv-bar admin-only"><button class="mv-btn" data-mv-media="${m.id}" data-dir="-1" title="前へ">◀</button><button class="mv-btn" data-mv-media="${m.id}" data-dir="1" title="後ろへ">▶</button></div>`;
     const del = `<button class="del-btn admin-only" data-del-media="${m.id}" data-url="${esc(m.url)}">削除</button>`;
     if(m.type === 'video'){
       return `<figure class="g-item" data-type="video" data-src="${esc(m.url)}">
         <video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video>
-        <span class="play-badge"></span>${cap}${del}</figure>`;
+        <span class="play-badge"></span>${cap}${mv}${del}</figure>`;
     }
     return `<figure class="g-item" data-type="image" data-src="${esc(m.url)}">
-      <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${del}</figure>`;
+      <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${mv}${del}</figure>`;
   }).join('');
 }
 
@@ -290,6 +309,20 @@ $('#galleryGrid').addEventListener('click', async e=>{
     await sb.from('media').delete().eq('id', id);
     toast('削除しました'); loadGallery();
   }catch(err){ toast('削除失敗: '+err.message); }
+});
+
+// 並び替え（委譲・◀▶で前後と入れ替え→sortを保存）
+$('#galleryGrid').addEventListener('click', async e=>{
+  const mv = e.target.closest('[data-mv-media]'); if(!mv) return;
+  e.preventDefault(); e.stopPropagation();
+  const id = mv.dataset.mvMedia, dir = parseInt(mv.dataset.dir,10);
+  const idx = galleryData.findIndex(m=> String(m.id) === String(id)); const j = idx + dir;
+  if(idx < 0 || j < 0 || j >= galleryData.length) return;
+  [galleryData[idx], galleryData[j]] = [galleryData[j], galleryData[idx]];
+  try{
+    await Promise.all(galleryData.map((m,i)=> sb.from('media').update({ sort:i }).eq('id', m.id)));
+    toast('順番を変更しました'); loadGallery();
+  }catch(err){ toast('順番変更に失敗: '+err.message); }
 });
 
 /* ---------- 日記 ---------- */

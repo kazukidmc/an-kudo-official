@@ -13,6 +13,8 @@ html{ scroll-behavior:smooth; }
 html{ overflow-x:hidden; }
 body{ font-family:var(--jp); color:var(--white); background:var(--night); overflow-x:hidden; position:relative; -webkit-font-smoothing:antialiased; max-width:100%; }
 img,video{ display:block; max-width:100%; }
+/* 画像のダウンロード抑止（右クリック保存・ドラッグ・iOS長押し保存を防ぐ） */
+img{ -webkit-user-drag:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
 b{ color:var(--gold); }
 a{ color:inherit; }
 
@@ -225,6 +227,11 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 
 /* ギャラリー横スクロールのヒント */
 .scroll-hint{ text-align:center; font-family:var(--dot); font-size:12px; color:var(--sky); margin:-22px 0 14px; opacity:.85; letter-spacing:1px; }
+
+/* 運営：並び替えボタン（◀▶） */
+.mv-bar{ position:absolute; top:8px; left:8px; z-index:4; display:flex; gap:5px; }
+.mv-btn{ font-family:var(--jp); font-weight:700; font-size:13px; line-height:1; color:#fff; background:rgba(18,10,46,.85); border:1px solid var(--line); border-radius:8px; padding:5px 9px; cursor:pointer; }
+.mv-btn:hover{ background:var(--emilia); color:var(--night); }
 
 /* 運営：画像変更ボタン行 */
 .admin-btn-row{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
