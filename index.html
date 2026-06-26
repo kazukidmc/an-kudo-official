@@ -7,7 +7,8 @@
 <meta name="description" content="萌えフードル学園 大宮本校「えま」公式サイト。プロフィール・ギャラリー・日記・コメント。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=DotGothic16&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Share+Tech+Mono&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.min.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -50,12 +51,24 @@
   <div class="scroll-cue"><span></span>SCROLL</div>
 </header>
 
+<!-- データカウンター（パチンコ台のデータ表示器風・7セグLED） -->
+<div class="data-counter" aria-hidden="true">
+  <span class="dc-title">DATA</span>
+  <div class="dc-cell"><small>出玉(ギャラリー)</small><b class="led" id="countGallery">0000</b></div>
+  <div class="dc-cell"><small>保留(コメント)</small><b class="led" id="countComment">0000</b></div>
+  <div class="dc-cell"><small>回転(日記)</small><b class="led" id="countDiary">0000</b></div>
+</div>
+
 <main>
 
 <!-- プロフィール -->
 <section class="section profile" id="profile">
   <h2 class="sec-title" data-num="I"><span class="en">PROFILE</span><span class="jp">― プロフィール ―</span></h2>
   <div class="profile-wrap">
+    <div class="spec-head">
+      <span class="sh-title"><span class="slot7">7</span> 機種スペック ／ SPEC</span>
+      <span class="spec-badge">確変中</span>
+    </div>
     <div class="profile-pic">
       <img src="images/photo2.jpg" alt="えま プロフィール写真" id="profilePic">
       <span class="pic-frame"></span>

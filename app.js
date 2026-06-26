@@ -26,6 +26,25 @@ function toast(msg){
   clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), 2600);
 }
 
+/* ---------- パチンコUI：図柄リール区切り & 7セグLEDカウンター ---------- */
+function injectReelBands(){
+  const SYM = [['7','s7'],['★',''],['◆',''],['BAR','sb'],['▲',''],['7','s7'],['♦',''],['★','']];
+  const one = SYM.map(([s,c])=>`<span class="${c}">${s}</span>`).join('');
+  const strip = one + one + one;          // 1ストリップ（×3）。トラックは×6で半分送りループ
+  document.querySelectorAll('.section .sec-title').forEach(t=>{
+    if(t.previousElementSibling && t.previousElementSibling.classList.contains('reel-band')) return;
+    const band = document.createElement('div');
+    band.className = 'reel-band'; band.setAttribute('aria-hidden','true');
+    band.innerHTML = `<div class="reel-track">${strip + strip}</div><div class="reel-line"></div>`;
+    t.parentNode.insertBefore(band, t);
+  });
+}
+function setLED(id, n){
+  const el = document.getElementById(id);
+  if(el) el.textContent = String(Math.max(0, n|0)).padStart(4,'0');
+}
+injectReelBands();
+
 /* ---------- 背景：星 & 光の粒子 ---------- */
 (function stars(){
   const w = $('#bgStars'); let h='';
@@ -156,7 +175,7 @@ function sampleGalleryHTML(){
 }
 let galleryImages = [];   // ヒーロー/プロフィールのスライド用（画像URL一覧）
 async function loadGallery(){
-  let imgs = [];
+  let imgs = [], mediaCount = 0;
   if(sb){
     const { data, error } = await sb.from('media').select('*').order('created_at',{ascending:false});
     if(error){ console.warn(error); }
@@ -164,6 +183,7 @@ async function loadGallery(){
       $('#galleryGrid').innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true;
       imgs = SAMPLE_MEDIA.map(m=>m.src);
     } else {
+      mediaCount = data.length;
       $('#galleryEmpty').hidden = true;
       $('#galleryGrid').innerHTML = data.map(m=>{
         const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
@@ -183,6 +203,7 @@ async function loadGallery(){
   }
   if(!imgs.length) imgs = SAMPLE_MEDIA.map(m=>m.src);   // 画像が無ければ同梱写真で代替
   galleryImages = imgs;
+  setLED('countGallery', mediaCount);
   startSlideshow();
 }
 
@@ -257,6 +278,7 @@ async function loadDiary(){
   if(!sb) return;
   const { data, error } = await sb.from('diary').select('*').order('created_at',{ascending:false});
   if(error){ console.warn(error); return; }
+  setLED('countDiary', data.length);
   const feed = $('#diaryFeed');
   if(!data.length){ feed.innerHTML=''; $('#diaryEmpty').hidden=false; return; }
   $('#diaryEmpty').hidden = true;
@@ -286,6 +308,7 @@ async function loadComments(){
   if(!sb) return;
   const { data, error } = await sb.from('comments').select('*').order('created_at',{ascending:true});
   if(error){ console.warn(error); return; }
+  setLED('countComment', data.length);
   const tops = data.filter(c=> !c.parent_id);
   const repliesByParent = {};
   data.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
