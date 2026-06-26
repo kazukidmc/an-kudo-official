@@ -55,7 +55,7 @@ a{ color:inherit; }
 .hero-stage{ position:relative; display:flex; justify-content:center; align-items:center; }
 .hero-circle{ position:absolute; width:min(96vw,620px); height:min(96vw,620px); z-index:0; opacity:.55; filter:drop-shadow(0 0 20px rgba(143,210,255,.4)); }
 .hero-media{ position:relative; z-index:1; width:min(84vw,440px); aspect-ratio:1/1; overflow:hidden; border-radius:50%; border:2px solid rgba(244,248,255,.7); box-shadow:0 0 40px rgba(143,210,255,.5), inset 0 0 60px rgba(18,10,46,.4); }
-.hero-img{ width:100%; height:100%; object-fit:cover; object-position:center 24%; animation:slowZoom 18s ease-in-out infinite alternate; }
+.hero-img{ width:100%; height:100%; object-fit:cover; object-position:center 24%; animation:slowZoom 18s ease-in-out infinite alternate; transition:opacity .45s ease; }
 @keyframes slowZoom{ from{ transform:scale(1);} to{ transform:scale(1.08);} }
 .hero-grad{ position:absolute; inset:0; border-radius:50%; box-shadow:inset 0 -50px 60px rgba(18,10,46,.6); }
 .hero-shimmer{ position:absolute; inset:0; background:linear-gradient(120deg, transparent 42%, rgba(255,255,255,.5) 50%, transparent 58%); transform:translateX(-100%); animation:shimmer 5s ease-in-out infinite; }
@@ -87,7 +87,7 @@ main{ position:relative; z-index:10; }
 /* プロフィール */
 .profile-wrap{ display:flex; gap:28px; flex-wrap:wrap; align-items:center; justify-content:center; background:var(--panel); border:1px solid var(--line); border-radius:18px; backdrop-filter:blur(8px); padding:26px; box-shadow:0 0 34px rgba(183,160,255,.2); }
 .profile-pic{ position:relative; flex:1 1 240px; max-width:290px; border-radius:14px; overflow:hidden; box-shadow:0 0 26px rgba(143,210,255,.35); }
-.profile-pic img{ width:100%; height:100%; object-fit:cover; aspect-ratio:3/4; }
+.profile-pic img{ width:100%; height:100%; object-fit:cover; aspect-ratio:3/4; transition:opacity .45s ease; }
 .pic-frame{ position:absolute; inset:8px; border:1px solid rgba(255,255,255,.6); border-radius:8px; pointer-events:none; }
 .pic-label{ position:absolute; bottom:12px; left:12px; font-family:var(--fant); font-weight:800; font-size:11px; letter-spacing:3px; color:#fff; text-shadow:0 0 8px var(--sky); }
 .profile-side{ flex:1 1 320px; }
@@ -138,8 +138,11 @@ input[type=file]{ color:var(--silver); font-size:13px; }
 .comment-form textarea{ min-height:84px; resize:vertical; }
 .comment-form .btn{ align-self:flex-start; }
 .form-note{ font-family:var(--dot); font-size:11px; color:var(--dim); }
-.comment-list{ display:flex; flex-direction:column; gap:14px; }
-.comment{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+.comment-list{ display:flex; flex-direction:row; gap:14px; overflow-x:auto; overflow-y:hidden; padding:6px 2px 14px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--emilia) rgba(255,255,255,.08); }
+.comment-list::-webkit-scrollbar{ height:8px; }
+.comment-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.06); border-radius:10px; }
+.comment-list::-webkit-scrollbar-thumb{ background:linear-gradient(90deg,var(--sky),var(--emilia)); border-radius:10px; }
+.comment{ flex:0 0 auto; width:min(86vw,340px); scroll-snap-align:center; max-height:330px; overflow-y:auto; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
 .comment .c-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
 .comment .c-name{ font-weight:700; color:var(--white); font-size:14px; }
 .comment .c-date{ font-family:var(--dot); font-size:11px; color:var(--dim); }

@@ -154,24 +154,64 @@ const SAMPLE_MEDIA = [
 function sampleGalleryHTML(){
   return SAMPLE_MEDIA.map(m=>`<figure class="g-item" data-type="image" data-src="${m.src}"><img src="${m.src}" alt="" loading="lazy"><figcaption>${m.cap}</figcaption></figure>`).join('');
 }
+let galleryImages = [];   // ヒーロー/プロフィールのスライド用（画像URL一覧）
 async function loadGallery(){
-  if(!sb) return; // デモ時はサンプルのまま
-  const { data, error } = await sb.from('media').select('*').order('created_at',{ascending:false});
-  if(error){ console.warn(error); return; }
-  const grid = $('#galleryGrid');
-  if(!data.length){ grid.innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true; return; }
-  $('#galleryEmpty').hidden = true;
-  grid.innerHTML = data.map(m=>{
-    const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
-    const del = `<button class="del-btn admin-only" data-del-media="${m.id}" data-url="${esc(m.url)}">削除</button>`;
-    if(m.type === 'video'){
-      return `<figure class="g-item" data-type="video" data-src="${esc(m.url)}">
-        <video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video>
-        <span class="play-badge"></span>${cap}${del}</figure>`;
+  let imgs = [];
+  if(sb){
+    const { data, error } = await sb.from('media').select('*').order('created_at',{ascending:false});
+    if(error){ console.warn(error); }
+    else if(!data.length){
+      $('#galleryGrid').innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true;
+      imgs = SAMPLE_MEDIA.map(m=>m.src);
+    } else {
+      $('#galleryEmpty').hidden = true;
+      $('#galleryGrid').innerHTML = data.map(m=>{
+        const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
+        const del = `<button class="del-btn admin-only" data-del-media="${m.id}" data-url="${esc(m.url)}">削除</button>`;
+        if(m.type === 'video'){
+          return `<figure class="g-item" data-type="video" data-src="${esc(m.url)}">
+            <video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video>
+            <span class="play-badge"></span>${cap}${del}</figure>`;
+        }
+        return `<figure class="g-item" data-type="image" data-src="${esc(m.url)}">
+          <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${del}</figure>`;
+      }).join('');
+      imgs = data.filter(m=> m.type === 'image').map(m=> m.url);
     }
-    return `<figure class="g-item" data-type="image" data-src="${esc(m.url)}">
-      <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${del}</figure>`;
-  }).join('');
+  } else {
+    imgs = SAMPLE_MEDIA.map(m=>m.src);
+  }
+  if(!imgs.length) imgs = SAMPLE_MEDIA.map(m=>m.src);   // 画像が無ければ同梱写真で代替
+  galleryImages = imgs;
+  startSlideshow();
+}
+
+/* ---------- ヒーロー＆プロフィール写真：ギャラリー画像を約10秒ごとにランダム表示 ---------- */
+let slideTimer = null;
+function pickRandom(arr, exclude){
+  if(!arr.length) return null;
+  if(arr.length === 1) return arr[0];
+  let v, n = 0;
+  do { v = arr[(Math.random()*arr.length)|0]; n++; } while(v === exclude && n < 8);
+  return v;
+}
+function fadeSwap(img, url){
+  if(!img || !url || img.dataset.cur === url) return;
+  img.style.opacity = '0';
+  setTimeout(()=>{ img.src = url; img.dataset.cur = url; img.style.opacity = '1'; }, 450);
+}
+function cycleHeroProfile(){
+  if(!galleryImages.length) return;
+  const hero = $('.hero-img'), pic = $('#profilePic');
+  const h = pickRandom(galleryImages, hero && hero.dataset.cur);
+  fadeSwap(hero, h);
+  const p = pickRandom(galleryImages, galleryImages.length > 1 ? h : (pic && pic.dataset.cur));
+  fadeSwap(pic, p);
+}
+function startSlideshow(){
+  if(slideTimer) clearInterval(slideTimer);
+  cycleHeroProfile();                          // 読み込み後すぐ1回切替
+  slideTimer = setInterval(cycleHeroProfile, 10000);
 }
 
 // アップロード
@@ -250,8 +290,9 @@ async function loadComments(){
   const repliesByParent = {};
   data.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
   const list = $('#commentList');
-  if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; return; }
+  if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; $('#commentHint').hidden=true; return; }
   $('#commentEmpty').hidden = true;
+  $('#commentHint').hidden = (tops.length < 2);   // 2件以上で横スクロールのヒント表示
   list.innerHTML = tops.map(c=>{
     const reps = (repliesByParent[c.id]||[]).map(r=>`
       <div class="reply"><div class="c-head"><span class="c-name"></span><span class="c-date">${fmtDate(r.created_at)}</span>
@@ -350,8 +391,9 @@ $('#loginBtn').addEventListener('click', async ()=>{
         .subscribe();
     }catch(_){}
   } else {
-    // デモモード：プロフィールは初期値を表示。バックエンド機能は接続後に有効化。
+    // デモモード：プロフィール初期値＋写真スライドを表示。バックエンド機能は接続後に有効化。
     loadProfile();
+    loadGallery();
     console.info('[DEMO] Supabase未接続。config.js を設定すると全機能が有効になります。');
   }
 })();
