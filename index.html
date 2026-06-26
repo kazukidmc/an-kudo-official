@@ -7,28 +7,10 @@
 <meta name="description" content="萌えフードル学園 大宮本校「えま」公式サイト。プロフィール・ギャラリー・日記・コメント。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Dela+Gothic+One&family=Share+Tech+Mono&family=DotGothic16&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/dseg@0.46.0/css/dseg.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=DotGothic16&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<!-- ===== 入場ゲート（強欲リーチ風） ===== -->
-<div id="gate" class="gate">
-  <div class="gate-photo"></div>
-  <div class="gate-aura"></div>
-  <div class="gate-rays"></div>
-  <span class="bfly b1">🦋</span><span class="bfly b2">🦋</span><span class="bfly b3">🦋</span>
-  <div class="gate-frame"></div>
-  <h1 class="greed">強欲</h1>
-  <p class="greed-sub">G R E E D</p>
-  <button class="greed-btn" id="greedBtn" aria-label="入場する">
-    <span class="gb-ring"></span>
-    <span class="gb-dome"></span>
-    <span class="gb-label">PUSH</span>
-  </button>
-  <p class="greed-hint">▼ ボタンを押して入場 ▼</p>
-</div>
 
 <!-- 背景 -->
 <div class="bg-wrap">
@@ -61,20 +43,12 @@
     </div>
   </div>
   <div class="hero-info">
-    <p class="hero-tag">萌えフードル学園 大宮本校</p>
+    <p class="hero-tag">萌えフードル学園 大宮本校　／　むちむちぷりてぃがーる</p>
     <h1 class="hero-name">え<span>ま</span></h1>
     <p class="hero-en">E &nbsp; M &nbsp; A</p>
   </div>
   <div class="scroll-cue"><span></span>SCROLL</div>
 </header>
-
-<!-- データカウンター（パチンコ台のデータ表示器風・7セグLED） -->
-<div class="data-counter" aria-hidden="true">
-  <span class="dc-title">DATA</span>
-  <div class="dc-cell"><small>出玉(ギャラリー)</small><b class="led" id="countGallery">0000</b></div>
-  <div class="dc-cell"><small>保留(コメント)</small><b class="led" id="countComment">0000</b></div>
-  <div class="dc-cell"><small>回転(日記)</small><b class="led" id="countDiary">0000</b></div>
-</div>
 
 <main>
 
@@ -82,10 +56,6 @@
 <section class="section profile" id="profile">
   <h2 class="sec-title" data-num="I"><span class="en">PROFILE</span><span class="jp">― プロフィール ―</span></h2>
   <div class="profile-wrap">
-    <div class="spec-head">
-      <span class="sh-title"><span class="slot7">7</span> 機種スペック ／ SPEC</span>
-      <span class="spec-badge">確変中</span>
-    </div>
     <div class="profile-pic">
       <img src="images/photo2.jpg" alt="えま プロフィール写真" id="profilePic">
       <span class="pic-frame"></span>
@@ -149,7 +119,6 @@
     <span class="form-note">※返信できるのは運営者のみです</span>
   </form>
 
-  <p class="scroll-hint" id="commentHint" hidden>← よこにスクロールで1件ずつ →</p>
   <div class="comment-list" id="commentList"></div>
   <p class="empty-note" id="commentEmpty" hidden>最初のコメントを書いてみよう！</p>
 </section>

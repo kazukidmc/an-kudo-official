@@ -26,123 +26,6 @@ function toast(msg){
   clearTimeout(t._t); t._t = setTimeout(()=> t.classList.remove('show'), 2600);
 }
 
-/* ---------- パチンコUI：図柄リール区切り & 7セグLEDカウンター ---------- */
-function injectReelBands(){
-  const SYM = [['7','s7'],['★',''],['◆',''],['BAR','sb'],['▲',''],['7','s7'],['♦',''],['★','']];
-  const one = SYM.map(([s,c])=>`<span class="${c}">${s}</span>`).join('');
-  const strip = one + one + one;          // 1ストリップ（×3）。トラックは×6で半分送りループ
-  document.querySelectorAll('.section .sec-title').forEach(t=>{
-    if(t.previousElementSibling && t.previousElementSibling.classList.contains('reel-band')) return;
-    const band = document.createElement('div');
-    band.className = 'reel-band'; band.setAttribute('aria-hidden','true');
-    band.innerHTML = `<div class="reel-track">${strip + strip}</div><div class="reel-line"></div>`;
-    t.parentNode.insertBefore(band, t);
-  });
-}
-function setLED(id, n){
-  const el = document.getElementById(id);
-  if(el) el.textContent = String(Math.max(0, n|0)).padStart(4,'0');
-}
-injectReelBands();
-
-/* ---------- 「ぽきゅーん」合成音（大都系オマージュ・Web Audio） ---------- */
-function playPokyun(ctx){
-  let ac = ctx;
-  try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){ return; }
-  if(!ac) return;
-  if(ac.state === 'suspended') ac.resume();
-  const now = ac.currentTime;
-  const master = ac.createGain(); master.gain.value = 0.4; master.connect(ac.destination);
-  const osc = ac.createOscillator(); osc.type = 'triangle';
-  const og = ac.createGain();
-  const lp = ac.createBiquadFilter(); lp.type = 'lowpass';
-  lp.frequency.setValueAtTime(800, now); lp.frequency.exponentialRampToValueAtTime(5200, now+0.18);
-  osc.connect(og); og.connect(lp); lp.connect(master);
-  osc.frequency.setValueAtTime(430, now);
-  osc.frequency.exponentialRampToValueAtTime(300, now+0.045);
-  osc.frequency.exponentialRampToValueAtTime(1080, now+0.17);
-  osc.frequency.exponentialRampToValueAtTime(900,  now+0.34);
-  const lfo = ac.createOscillator(); lfo.frequency.value = 15;
-  const lfoG = ac.createGain(); lfoG.gain.value = 26; lfo.connect(lfoG); lfoG.connect(osc.frequency);
-  og.gain.setValueAtTime(0, now); og.gain.linearRampToValueAtTime(1.0, now+0.02); og.gain.exponentialRampToValueAtTime(0.0001, now+0.8);
-  const o2 = ac.createOscillator(); o2.type = 'sine'; const g2 = ac.createGain(); o2.connect(g2); g2.connect(master);
-  o2.frequency.setValueAtTime(1700, now+0.12); o2.frequency.exponentialRampToValueAtTime(2800, now+0.32);
-  g2.gain.setValueAtTime(0, now+0.12); g2.gain.linearRampToValueAtTime(0.22, now+0.16); g2.gain.exponentialRampToValueAtTime(0.0001, now+0.55);
-  osc.start(now); o2.start(now+0.1); lfo.start(now);
-  osc.stop(now+0.85); o2.stop(now+0.6); lfo.stop(now+0.85);
-  if(!ctx) setTimeout(()=>{ try{ ac.close(); }catch(_){} }, 1200);
-}
-
-/* ---------- 入場SE：ローカル音源(あれば)＞重厚リバーブ合成音 ---------- */
-function makeReverb(ac, seconds, decay){
-  const rate = ac.sampleRate, len = Math.floor(rate*seconds);
-  const imp = ac.createBuffer(2, len, rate);
-  for(let ch=0; ch<2; ch++){ const d = imp.getChannelData(ch);
-    for(let i=0;i<len;i++){ d[i] = (Math.random()*2-1)*Math.pow(1-i/len, decay); } }
-  const c = ac.createConvolver(); c.buffer = imp; return c;
-}
-function playGreedSE(ctx){
-  let ac = ctx;
-  try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){ return; }
-  if(!ac) return; if(ac.state==='suspended') ac.resume();
-  const now = ac.currentTime;
-  const out = ac.createGain(); out.gain.value = 0.5; out.connect(ac.destination);
-  let verb=null; try{ verb = makeReverb(ac, 2.4, 2.8); }catch(_){}
-  const vg = ac.createGain(); vg.gain.value = 0.5; if(verb){ verb.connect(vg); vg.connect(out); }
-  const dry = ac.createGain(); dry.gain.value = 0.9; dry.connect(out);
-  const send = node => { node.connect(dry); if(verb) node.connect(verb); };
-  // 重低音インパクト（ドンッ）
-  const boom = ac.createOscillator(); boom.type='sine'; const bg = ac.createGain();
-  boom.frequency.setValueAtTime(180, now); boom.frequency.exponentialRampToValueAtTime(46, now+0.5);
-  bg.gain.setValueAtTime(0.0001, now); bg.gain.exponentialRampToValueAtTime(1.0, now+0.012); bg.gain.exponentialRampToValueAtTime(0.0001, now+0.7);
-  boom.connect(bg); send(bg); boom.start(now); boom.stop(now+0.75);
-  // 金属ライザー（シャキーン）
-  const r1 = ac.createOscillator(), r2 = ac.createOscillator(); r1.type='sawtooth'; r2.type='sawtooth'; r2.detune.value=12;
-  const rf = ac.createBiquadFilter(); rf.type='bandpass'; rf.Q.value=6;
-  rf.frequency.setValueAtTime(300, now); rf.frequency.exponentialRampToValueAtTime(5000, now+0.55);
-  const rg = ac.createGain(); rg.gain.setValueAtTime(0.0001, now); rg.gain.linearRampToValueAtTime(0.45, now+0.45); rg.gain.exponentialRampToValueAtTime(0.0001, now+0.85);
-  r1.connect(rf); r2.connect(rf); rf.connect(rg); send(rg); r1.start(now); r2.start(now); r1.stop(now+0.9); r2.stop(now+0.9);
-  // 閃光チャイム（確定音）
-  const t0 = now+0.5;
-  [1318.5,1760,2637].forEach((f,i)=>{ const o=ac.createOscillator(); o.type='triangle'; const g=ac.createGain();
-    o.frequency.setValueAtTime(f, t0); g.gain.setValueAtTime(0.0001, t0+i*0.02); g.gain.exponentialRampToValueAtTime(0.38, t0+0.03+i*0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0+1.2);
-    o.connect(g); send(g); o.start(t0+i*0.02); o.stop(t0+1.3); });
-  // キラキラ余韻
-  for(let i=0;i<5;i++){ const o=ac.createOscillator(); o.type='sine'; const g=ac.createGain(); const tt=now+0.6+i*0.09;
-    o.frequency.setValueAtTime(2000+Math.random()*1800, tt); g.gain.setValueAtTime(0.0001, tt); g.gain.linearRampToValueAtTime(0.15, tt+0.01); g.gain.exponentialRampToValueAtTime(0.0001, tt+0.4);
-    o.connect(g); send(g); o.start(tt); o.stop(tt+0.45); }
-  if(!ctx) setTimeout(()=>{ try{ ac.close(); }catch(_){} }, 3500);
-}
-// sounds/sakibare.mp3 を置くと優先再生（無ければ上の合成音）
-const _seFile = (()=>{ try{ const a = new Audio('sounds/sakibare.mp3'); a.preload='auto'; a.volume=0.9; return a; }catch(_){ return null; } })();
-let _seFileOk = false;
-if(_seFile){ _seFile.addEventListener('canplaythrough', ()=> _seFileOk = true); _seFile.addEventListener('error', ()=> _seFileOk = false); }
-function playEntranceSE(ac){
-  if(_seFileOk && _seFile){ try{ _seFile.currentTime = 0; const p = _seFile.play(); if(p && p.catch) p.catch(()=> playGreedSE(ac)); return; }catch(_){} }
-  playGreedSE(ac);
-}
-
-/* ---------- 入場ゲート（強欲）：PUSHで入場 ---------- */
-(function gate(){
-  const gate = $('#gate'); if(!gate) return;
-  document.body.style.overflow = 'hidden';
-  let ac = null;
-  function ensureAudio(){
-    try { if(!ac) ac = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){}
-    if(ac && ac.state==='suspended') ac.resume();
-  }
-  ['pointerdown','touchstart','keydown'].forEach(ev => window.addEventListener(ev, ensureAudio, { passive:true }));
-
-  const btn = $('#greedBtn');
-  function enterSite(){
-    ensureAudio(); playEntranceSE(ac);
-    gate.classList.add('flash');
-    setTimeout(()=>{ gate.classList.add('hide'); document.body.style.overflow=''; }, 280);
-    setTimeout(()=> gate.remove(), 1100);
-  }
-  btn && btn.addEventListener('click', enterSite);
-})();
-
 /* ---------- 背景：星 & 光の粒子 ---------- */
 (function stars(){
   const w = $('#bgStars'); let h='';
@@ -271,66 +154,24 @@ const SAMPLE_MEDIA = [
 function sampleGalleryHTML(){
   return SAMPLE_MEDIA.map(m=>`<figure class="g-item" data-type="image" data-src="${m.src}"><img src="${m.src}" alt="" loading="lazy"><figcaption>${m.cap}</figcaption></figure>`).join('');
 }
-let galleryImages = [];   // ヒーロー/プロフィールのスライド用（画像URL一覧）
 async function loadGallery(){
-  let imgs = [], mediaCount = 0;
-  if(sb){
-    const { data, error } = await sb.from('media').select('*').order('created_at',{ascending:false});
-    if(error){ console.warn(error); }
-    else if(!data.length){
-      $('#galleryGrid').innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true;
-      imgs = SAMPLE_MEDIA.map(m=>m.src);
-    } else {
-      mediaCount = data.length;
-      $('#galleryEmpty').hidden = true;
-      $('#galleryGrid').innerHTML = data.map(m=>{
-        const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
-        const del = `<button class="del-btn admin-only" data-del-media="${m.id}" data-url="${esc(m.url)}">削除</button>`;
-        if(m.type === 'video'){
-          return `<figure class="g-item" data-type="video" data-src="${esc(m.url)}">
-            <video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video>
-            <span class="play-badge"></span>${cap}${del}</figure>`;
-        }
-        return `<figure class="g-item" data-type="image" data-src="${esc(m.url)}">
-          <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${del}</figure>`;
-      }).join('');
-      imgs = data.filter(m=> m.type === 'image').map(m=> m.url);
+  if(!sb) return; // デモ時はサンプルのまま
+  const { data, error } = await sb.from('media').select('*').order('created_at',{ascending:false});
+  if(error){ console.warn(error); return; }
+  const grid = $('#galleryGrid');
+  if(!data.length){ grid.innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true; return; }
+  $('#galleryEmpty').hidden = true;
+  grid.innerHTML = data.map(m=>{
+    const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
+    const del = `<button class="del-btn admin-only" data-del-media="${m.id}" data-url="${esc(m.url)}">削除</button>`;
+    if(m.type === 'video'){
+      return `<figure class="g-item" data-type="video" data-src="${esc(m.url)}">
+        <video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video>
+        <span class="play-badge"></span>${cap}${del}</figure>`;
     }
-  } else {
-    imgs = SAMPLE_MEDIA.map(m=>m.src);
-  }
-  if(!imgs.length) imgs = SAMPLE_MEDIA.map(m=>m.src);   // 画像が無ければ同梱写真で代替
-  galleryImages = imgs;
-  setLED('countGallery', mediaCount);
-  startSlideshow();
-}
-
-/* ---------- ヒーロー＆プロフィール写真：ギャラリー画像を約10秒ごとにランダム表示 ---------- */
-let slideTimer = null;
-function pickRandom(arr, exclude){
-  if(!arr.length) return null;
-  if(arr.length === 1) return arr[0];
-  let v, n = 0;
-  do { v = arr[(Math.random()*arr.length)|0]; n++; } while(v === exclude && n < 8);
-  return v;
-}
-function fadeSwap(img, url){
-  if(!img || !url || img.dataset.cur === url) return;
-  img.style.opacity = '0';
-  setTimeout(()=>{ img.src = url; img.dataset.cur = url; img.style.opacity = '1'; }, 450);
-}
-function cycleHeroProfile(){
-  if(!galleryImages.length) return;
-  const hero = $('.hero-img'), pic = $('#profilePic');
-  const h = pickRandom(galleryImages, hero && hero.dataset.cur);
-  fadeSwap(hero, h);
-  const p = pickRandom(galleryImages, galleryImages.length > 1 ? h : (pic && pic.dataset.cur));
-  fadeSwap(pic, p);
-}
-function startSlideshow(){
-  if(slideTimer) clearInterval(slideTimer);
-  cycleHeroProfile();                          // 読み込み後すぐ1回切替
-  slideTimer = setInterval(cycleHeroProfile, 10000);
+    return `<figure class="g-item" data-type="image" data-src="${esc(m.url)}">
+      <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${del}</figure>`;
+  }).join('');
 }
 
 // アップロード
@@ -376,7 +217,6 @@ async function loadDiary(){
   if(!sb) return;
   const { data, error } = await sb.from('diary').select('*').order('created_at',{ascending:false});
   if(error){ console.warn(error); return; }
-  setLED('countDiary', data.length);
   const feed = $('#diaryFeed');
   if(!data.length){ feed.innerHTML=''; $('#diaryEmpty').hidden=false; return; }
   $('#diaryEmpty').hidden = true;
@@ -406,14 +246,12 @@ async function loadComments(){
   if(!sb) return;
   const { data, error } = await sb.from('comments').select('*').order('created_at',{ascending:true});
   if(error){ console.warn(error); return; }
-  setLED('countComment', data.length);
   const tops = data.filter(c=> !c.parent_id);
   const repliesByParent = {};
   data.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
   const list = $('#commentList');
-  if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; $('#commentHint').hidden=true; return; }
+  if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; return; }
   $('#commentEmpty').hidden = true;
-  $('#commentHint').hidden = (tops.length < 2);   // 2件以上で横スクロールのヒント表示
   list.innerHTML = tops.map(c=>{
     const reps = (repliesByParent[c.id]||[]).map(r=>`
       <div class="reply"><div class="c-head"><span class="c-name"></span><span class="c-date">${fmtDate(r.created_at)}</span>
@@ -512,9 +350,8 @@ $('#loginBtn').addEventListener('click', async ()=>{
         .subscribe();
     }catch(_){}
   } else {
-    // デモモード：プロフィール初期値＋写真スライドを表示。バックエンド機能は接続後に有効化。
+    // デモモード：プロフィールは初期値を表示。バックエンド機能は接続後に有効化。
     loadProfile();
-    loadGallery();
     console.info('[DEMO] Supabase未接続。config.js を設定すると全機能が有効になります。');
   }
 })();
