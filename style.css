@@ -244,4 +244,4 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 .reco-card .reco-title{ font-family:var(--jp); font-weight:700; font-size:13px; color:var(--white); line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .reco-card .reco-cta{ margin-top:10px; display:inline-block; font-family:var(--fant); font-weight:800; font-size:11px; letter-spacing:1px; color:var(--night); background:linear-gradient(180deg,#fff,var(--gold)); padding:6px 14px; border-radius:20px; }
 .reco-card .del-btn{ position:absolute; top:8px; right:8px; z-index:3; }
-.reco-disclosure{ text-align:center; font-family:var(--dot); font-size:10px; color:var(--dim); margin-top:14px; letter-spacing:.5px; }
+.footer-disclosure{ position:relative; max-width:560px; margin:18px auto 0; text-align:center; font-family:var(--jp); font-size:11px; line-height:1.7; color:var(--dim); letter-spacing:.3px; }
