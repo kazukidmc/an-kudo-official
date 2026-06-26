@@ -67,10 +67,9 @@ $('#lbClose').addEventListener('click', closeLightbox);
 lb.addEventListener('click', e=>{ if(e.target === lb) closeLightbox(); });
 
 // ギャラリーのクリック（委譲：DB項目・サンプル両対応）
-$('#galleryGrid').addEventListener('click', e=>{
-  if(e.target.closest('.del-btn, .mv-btn')) return;
-  const item = e.target.closest('.g-item'); if(!item) return;
-  openLightbox(item.dataset.type || 'image', item.dataset.src);
+// 大画像クリックで拡大表示
+$('#gmStage') && $('#gmStage').addEventListener('click', ()=>{
+  const s = $('#gmStage'); if(s && s.dataset.src) openLightbox(s.dataset.type || 'image', s.dataset.src);
 });
 
 /* ============================================================
@@ -250,28 +249,63 @@ const SAMPLE_MEDIA = [
 function sampleGalleryHTML(){
   return SAMPLE_MEDIA.map(m=>`<figure class="g-item" data-type="image" data-src="${m.src}"><img src="${m.src}" alt="" loading="lazy"><figcaption>${m.cap}</figcaption></figure>`).join('');
 }
-let galleryData = [];   // 現在の表示順（並び替え用）
+let galleryData = [];   // 現在の表示順
+let galleryIndex = 0;   // 大画像に表示中のインデックス
+let gallerySlideTimer = null;
+
 async function loadGallery(){
-  if(!sb) return; // デモ時はサンプルのまま
+  if(!sb) return;
   const { data, error } = await sb.from('media').select('*').order('sort',{ascending:true}).order('created_at',{ascending:false});
   if(error){ console.warn(error); return; }
-  const grid = $('#galleryGrid');
-  if(!data.length){ grid.innerHTML = sampleGalleryHTML(); $('#galleryEmpty').hidden = true; galleryData = []; return; }
-  galleryData = data;
-  $('#galleryEmpty').hidden = true;
-  grid.innerHTML = data.map(m=>{
-    const cap = m.caption ? `<figcaption>${esc(m.caption)}</figcaption>` : '';
-    const mv  = `<div class="mv-bar admin-only"><button class="mv-btn" data-mv-media="${m.id}" data-dir="-1" title="前へ">◀</button><button class="mv-btn" data-mv-media="${m.id}" data-dir="1" title="後ろへ">▶</button></div>`;
-    const del = `<button class="del-btn admin-only" data-del-media="${m.id}" data-url="${esc(m.url)}">削除</button>`;
-    if(m.type === 'video'){
-      return `<figure class="g-item" data-type="video" data-src="${esc(m.url)}">
-        <video src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video>
-        <span class="play-badge"></span>${cap}${mv}${del}</figure>`;
-    }
-    return `<figure class="g-item" data-type="image" data-src="${esc(m.url)}">
-      <img src="${esc(m.url)}" alt="" loading="lazy">${cap}${mv}${del}</figure>`;
+  galleryData = data.length ? data : SAMPLE_MEDIA.map((m,i)=> ({ id:'sample-'+i, type:'image', url:m.src, caption:m.cap }));
+  $('#galleryEmpty').hidden = !!galleryData.length;
+  if(galleryIndex >= galleryData.length) galleryIndex = 0;
+  renderGalleryMain(); renderGalleryThumbs(); startGallerySlideshow();
+}
+function renderGalleryMain(){
+  const stage = $('#gmStage'); if(!stage || !galleryData.length) return;
+  const m = galleryData[galleryIndex];
+  stage.innerHTML = (m.type === 'video')
+    ? `<video class="gm-media" src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video><span class="play-badge"></span>`
+    : `<img class="gm-media" src="${esc(m.url)}" alt="">`;
+  stage.dataset.type = m.type; stage.dataset.src = m.url;
+}
+function renderGalleryThumbs(){
+  const wrap = $('#galleryThumbs'); if(!wrap) return;
+  wrap.innerHTML = galleryData.map((m,i)=>{
+    const real = m.id && !String(m.id).startsWith('sample');
+    const media = (m.type === 'video')
+      ? `<video src="${esc(m.url)}#t=0.1" muted preload="metadata"></video><span class="t-play">▶</span>`
+      : `<img src="${esc(m.url)}" alt="" loading="lazy">`;
+    const adm = real ? `<div class="thumb-admin admin-only">
+        <button class="t-mv" data-mv-media="${m.id}" data-dir="-1" title="前へ">◀</button>
+        <button class="t-del" data-del-media="${m.id}" data-url="${esc(m.url)}" title="削除">✕</button>
+        <button class="t-mv" data-mv-media="${m.id}" data-dir="1" title="後ろへ">▶</button></div>` : '';
+    return `<div class="thumb${i===galleryIndex?' active':''}" data-idx="${i}">${media}${adm}</div>`;
   }).join('');
 }
+function markActiveThumb(){ $$('#galleryThumbs .thumb').forEach((t,i)=> t.classList.toggle('active', i===galleryIndex)); }
+function showGallery(i){
+  if(!galleryData.length) return;
+  galleryIndex = (i + galleryData.length) % galleryData.length;
+  renderGalleryMain(); markActiveThumb(); startGallerySlideshow();   // 手動操作でタイマーリセット
+}
+function startGallerySlideshow(){
+  clearInterval(gallerySlideTimer);
+  if(galleryData.length < 2) return;
+  gallerySlideTimer = setInterval(()=>{
+    let n; do { n = Math.floor(Math.random()*galleryData.length); } while(n === galleryIndex);
+    galleryIndex = n; renderGalleryMain(); markActiveThumb();
+  }, 5000);   // 5秒ごとにランダムで大画像を変更
+}
+// 左右ナビ＆サムネ選択
+$('#gmPrev') && $('#gmPrev').addEventListener('click', ()=> showGallery(galleryIndex - 1));
+$('#gmNext') && $('#gmNext').addEventListener('click', ()=> showGallery(galleryIndex + 1));
+$('#galleryThumbs') && $('#galleryThumbs').addEventListener('click', e=>{
+  if(e.target.closest('.thumb-admin')) return;
+  const t = e.target.closest('.thumb'); if(!t) return;
+  showGallery(parseInt(t.dataset.idx,10));
+});
 
 // アップロード
 $('#uploadBtn').addEventListener('click', async ()=>{
@@ -297,32 +331,31 @@ $('#uploadBtn').addEventListener('click', async ()=>{
   finally{ btn.disabled = false; setTimeout(()=> st.textContent='', 4000); }
 });
 
-// 削除（委譲）
-$('#galleryGrid').addEventListener('click', async e=>{
-  const b = e.target.closest('[data-del-media]'); if(!b) return;
+// 運営：サムネの並び替え（◀▶）・削除（✕）
+$('#galleryThumbs') && $('#galleryThumbs').addEventListener('click', async e=>{
+  const mv  = e.target.closest('[data-mv-media]');
+  const del = e.target.closest('[data-del-media]');
+  if(!mv && !del) return;
   e.stopPropagation();
+  if(mv){
+    const id = mv.dataset.mvMedia, dir = parseInt(mv.dataset.dir,10);
+    const idx = galleryData.findIndex(m=> String(m.id) === String(id)); const j = idx + dir;
+    if(idx < 0 || j < 0 || j >= galleryData.length) return;
+    [galleryData[idx], galleryData[j]] = [galleryData[j], galleryData[idx]];
+    try{
+      await Promise.all(galleryData.map((m,i)=> sb.from('media').update({ sort:i }).eq('id', m.id)));
+      toast('順番を変更しました'); loadGallery();
+    }catch(err){ toast('順番変更に失敗: '+err.message); }
+    return;
+  }
   if(!confirm('この投稿を削除しますか？')) return;
-  const id = b.dataset.delMedia, url = b.dataset.url;
+  const id = del.dataset.delMedia, url = del.dataset.url;
   try{
     const path = url.split('/media/')[1];
     if(path) await sb.storage.from('media').remove([decodeURIComponent(path)]);
     await sb.from('media').delete().eq('id', id);
     toast('削除しました'); loadGallery();
   }catch(err){ toast('削除失敗: '+err.message); }
-});
-
-// 並び替え（委譲・◀▶で前後と入れ替え→sortを保存）
-$('#galleryGrid').addEventListener('click', async e=>{
-  const mv = e.target.closest('[data-mv-media]'); if(!mv) return;
-  e.preventDefault(); e.stopPropagation();
-  const id = mv.dataset.mvMedia, dir = parseInt(mv.dataset.dir,10);
-  const idx = galleryData.findIndex(m=> String(m.id) === String(id)); const j = idx + dir;
-  if(idx < 0 || j < 0 || j >= galleryData.length) return;
-  [galleryData[idx], galleryData[j]] = [galleryData[j], galleryData[idx]];
-  try{
-    await Promise.all(galleryData.map((m,i)=> sb.from('media').update({ sort:i }).eq('id', m.id)));
-    toast('順番を変更しました'); loadGallery();
-  }catch(err){ toast('順番変更に失敗: '+err.message); }
 });
 
 /* ---------- 日記 ---------- */
@@ -360,7 +393,7 @@ async function loadComments(){
   if(!sb) return;
   const { data, error } = await sb.from('comments').select('*').order('created_at',{ascending:true});
   if(error){ console.warn(error); return; }
-  const tops = data.filter(c=> !c.parent_id);
+  const tops = data.filter(c=> !c.parent_id).reverse();   // 最新を左に
   const repliesByParent = {};
   data.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
   const list = $('#commentList');

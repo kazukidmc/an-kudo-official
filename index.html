@@ -87,14 +87,13 @@
     <p class="upload-status" id="uploadStatus"></p>
   </div>
 
-  <p class="scroll-hint">← よこにスクロールして見てね →</p>
-  <div class="gallery-grid" id="galleryGrid">
-    <figure class="g-item" data-type="image" data-src="images/photo1.jpg"><img src="images/photo1.jpg" alt=""><figcaption>YUKATA</figcaption></figure>
-    <figure class="g-item" data-type="image" data-src="images/photo3.jpg"><img src="images/photo3.jpg" alt=""><figcaption>SCHOOL</figcaption></figure>
-    <figure class="g-item" data-type="image" data-src="images/photo4.jpg"><img src="images/photo4.jpg" alt=""><figcaption>OUTING</figcaption></figure>
-    <figure class="g-item" data-type="image" data-src="images/photo5.jpg"><img src="images/photo5.jpg" alt=""><figcaption>STAGE</figcaption></figure>
-    <figure class="g-item" data-type="image" data-src="images/photo2.jpg"><img src="images/photo2.jpg" alt=""><figcaption>NATURAL</figcaption></figure>
+  <div class="gallery-main" id="galleryMain">
+    <button class="gm-nav gm-prev" id="gmPrev" aria-label="前の画像">‹</button>
+    <div class="gm-stage" id="gmStage"></div>
+    <button class="gm-nav gm-next" id="gmNext" aria-label="次の画像">›</button>
   </div>
+  <p class="scroll-hint">← サムネイルを横スクロールで全部見れる →</p>
+  <div class="gallery-thumbs" id="galleryThumbs"></div>
   <p class="empty-note" id="galleryEmpty" hidden>まだ投稿がありません。</p>
 </section>
 
