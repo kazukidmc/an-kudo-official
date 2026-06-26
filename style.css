@@ -232,6 +232,7 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 .gallery-main{ position:relative; width:100%; max-width:480px; margin:0 auto; }
 .gm-stage{ position:relative; width:100%; aspect-ratio:3/4; max-height:64vh; border-radius:16px; overflow:hidden; border:1px solid var(--line); background:#0a0720; box-shadow:0 0 30px rgba(183,160,255,.25); cursor:zoom-in; }
 .gm-media{ width:100%; height:100%; object-fit:cover; transition:opacity .4s ease; }
+.gm-cap{ position:absolute; left:0; right:0; bottom:0; z-index:2; font-family:var(--min); font-size:15px; color:#fff; text-align:center; letter-spacing:1px; line-height:1.6; background:linear-gradient(0deg, rgba(12,7,34,.94), rgba(12,7,34,.55) 60%, transparent); padding:30px 16px 14px; }
 .gm-stage .play-badge{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
 .gm-stage .play-badge::after{ content:"▶"; font-size:30px; color:#fff; background:rgba(18,10,46,.55); width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,.8); box-shadow:0 0 18px rgba(143,210,255,.6); padding-left:5px; }
 .gm-nav{ position:absolute; top:50%; transform:translateY(-50%); z-index:3; width:42px; height:42px; border-radius:50%; border:1px solid var(--line); background:rgba(18,10,46,.72); color:#fff; font-size:26px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(4px); transition:.2s; }
@@ -251,6 +252,28 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 .thumb-admin .t-del{ color:var(--rose); }
 .thumb-admin button:hover{ color:var(--gold); }
 @media (max-width:560px){ .thumb{ width:calc((100% - 18px)/4); } }
+
+/* GALLERY見出しを一覧ページへのリンクに */
+.sec-title-link{ display:inline-block; text-decoration:none; transition:transform .2s; }
+.sec-title-link:hover{ transform:translateY(-2px); }
+.sec-title-link .en::after{ content:" ›"; color:var(--gold); }
+.sec-title-link:hover .en{ text-shadow:0 0 24px var(--gold); }
+.gallery-more{ display:block; width:max-content; max-width:92%; margin:18px auto 0; text-decoration:none; }
+
+/* ===== GALLERY 一覧ページ（masonry） ===== */
+.gp-head{ position:relative; z-index:10; text-align:center; padding:96px 20px 16px; }
+.gp-num{ font-family:var(--fant); font-weight:900; font-size:clamp(20px,5vw,30px); color:var(--gold); letter-spacing:6px; text-shadow:0 0 14px rgba(255,224,138,.6); }
+.gp-title{ font-family:var(--fant); font-weight:900; font-size:clamp(44px,11vw,84px); color:#fff; letter-spacing:6px; text-shadow:0 0 20px var(--sky), 0 0 50px rgba(183,160,255,.5); }
+.gp-sub{ font-family:var(--min); color:var(--emilia); letter-spacing:6px; margin-top:8px; font-size:14px; }
+.masonry{ position:relative; z-index:10; column-count:3; column-gap:14px; max-width:1040px; margin:24px auto 0; padding:0 16px; }
+@media (max-width:640px){ .masonry{ column-count:2; column-gap:10px; padding:0 10px; } }
+.m-item{ position:relative; break-inside:avoid; margin:0 0 14px; border-radius:14px; overflow:hidden; border:1px solid var(--line); cursor:zoom-in; transition:transform .25s, box-shadow .25s, border-color .25s; box-shadow:0 0 16px rgba(0,0,0,.4); }
+.m-item img, .m-item video{ width:100%; display:block; }
+.m-item:hover{ transform:translateY(-4px); border-color:var(--gold); box-shadow:0 0 26px rgba(255,224,138,.45); }
+.m-item figcaption{ position:absolute; left:0; right:0; bottom:0; font-family:var(--min); font-size:13px; color:#fff; letter-spacing:.5px; background:linear-gradient(0deg, rgba(12,7,34,.92), transparent); padding:22px 12px 10px; opacity:0; transition:opacity .25s; }
+.m-item:hover figcaption{ opacity:1; }
+.m-item .m-play{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#fff; font-size:32px; text-shadow:0 0 10px #000; pointer-events:none; }
+.gp-back{ text-align:center; margin:34px 0 10px; position:relative; z-index:10; }
 
 /* 運営：並び替えボタン（◀▶） */
 .mv-bar{ position:absolute; top:8px; left:8px; z-index:4; display:flex; gap:5px; }

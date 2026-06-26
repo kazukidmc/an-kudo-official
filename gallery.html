@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GALLERY ｜ えま ✦ 萌えフードル学園 大宮本校</title>
+<meta name="description" content="えま（萌えフードル学園 大宮本校）のフォト＆ムービーギャラリー。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Cormorant+Garamond:ital,wght@0,600;1,500&family=Shippori+Mincho+B1:wght@600;700;800&family=Zen+Kaku+Gothic+New:wght@500;700;900&family=Dela+Gothic+One&family=Share+Tech+Mono&family=DotGothic16&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- 背景 -->
+<div class="bg-wrap">
+  <div class="bg-sky"></div>
+  <div class="mcircle bg-circle one"><span></span><span></span><span></span><b></b></div>
+  <div class="mcircle bg-circle two"><span></span><span></span><span></span><b></b></div>
+  <div class="bg-stars" id="bgStars"></div>
+</div>
+
+<!-- ナビ -->
+<nav class="nav">
+  <a class="nav-logo" href="index.html">えま</a>
+  <div class="nav-links">
+    <a href="index.html">← TOP へ戻る</a>
+  </div>
+</nav>
+
+<!-- ヘッダー -->
+<header class="gp-head">
+  <p class="gp-num">II</p>
+  <h1 class="gp-title">GALLERY</h1>
+  <p class="gp-sub">― えまの写真・動画 ―</p>
+</header>
+
+<main>
+  <div class="masonry" id="masonry"></div>
+  <p class="empty-note" id="gpEmpty" hidden>まだ投稿がありません。</p>
+  <div class="gp-back">
+    <a class="btn" href="index.html">← TOP へ戻る</a>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="mcircle footer-circle"><span></span><span></span><b></b></div>
+  <p class="footer-name">えま</p>
+  <p class="footer-grp">萌えフードル学園 大宮本校</p>
+</footer>
+
+<!-- ライトボックス -->
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" id="lbClose">✕</button>
+  <div class="lb-inner" id="lbInner"></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+<script src="gallery.js"></script>
+</body>
+</html>

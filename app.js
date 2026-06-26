@@ -265,9 +265,11 @@ async function loadGallery(){
 function renderGalleryMain(){
   const stage = $('#gmStage'); if(!stage || !galleryData.length) return;
   const m = galleryData[galleryIndex];
-  stage.innerHTML = (m.type === 'video')
+  const media = (m.type === 'video')
     ? `<video class="gm-media" src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video><span class="play-badge"></span>`
     : `<img class="gm-media" src="${esc(m.url)}" alt="">`;
+  const cap = m.caption ? `<figcaption class="gm-cap">${esc(m.caption)}</figcaption>` : '';
+  stage.innerHTML = media + cap;
   stage.dataset.type = m.type; stage.dataset.src = m.url;
 }
 function renderGalleryThumbs(){
