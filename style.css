@@ -127,8 +127,11 @@ input[type=file]{ color:var(--silver); font-size:13px; }
 .del-btn:hover{ background:#e0244a; }
 
 /* 日記 */
-.diary-feed{ display:flex; flex-direction:column; gap:16px; }
-.diary-card{ position:relative; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--rose); border-radius:14px; padding:18px 20px; backdrop-filter:blur(6px); }
+.diary-feed{ display:flex; flex-direction:row; gap:16px; overflow-x:auto; overflow-y:hidden; padding:6px 2px 14px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--rose) rgba(255,255,255,.08); }
+.diary-feed::-webkit-scrollbar{ height:8px; }
+.diary-feed::-webkit-scrollbar-track{ background:rgba(255,255,255,.06); border-radius:10px; }
+.diary-feed::-webkit-scrollbar-thumb{ background:linear-gradient(90deg,var(--rose),var(--gold)); border-radius:10px; }
+.diary-card{ flex:0 0 auto; width:min(86vw,340px); scroll-snap-align:center; max-height:300px; overflow-y:auto; position:relative; background:var(--panel); border:1px solid var(--line); border-left:3px solid var(--rose); border-radius:14px; padding:18px 20px; backdrop-filter:blur(6px); }
 .diary-card .body{ font-family:var(--min); line-height:1.9; white-space:pre-wrap; }
 .diary-card .date{ font-family:var(--dot); font-size:12px; color:var(--sky); margin-top:10px; }
 .diary-card .del-btn{ position:absolute; top:12px; right:12px; }
@@ -138,8 +141,11 @@ input[type=file]{ color:var(--silver); font-size:13px; }
 .comment-form textarea{ min-height:84px; resize:vertical; }
 .comment-form .btn{ align-self:flex-start; }
 .form-note{ font-family:var(--dot); font-size:11px; color:var(--dim); }
-.comment-list{ display:flex; flex-direction:column; gap:14px; }
-.comment{ background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
+.comment-list{ display:flex; flex-direction:row; gap:14px; overflow-x:auto; overflow-y:hidden; padding:6px 2px 14px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:var(--emilia) rgba(255,255,255,.08); }
+.comment-list::-webkit-scrollbar{ height:8px; }
+.comment-list::-webkit-scrollbar-track{ background:rgba(255,255,255,.06); border-radius:10px; }
+.comment-list::-webkit-scrollbar-thumb{ background:linear-gradient(90deg,var(--sky),var(--emilia)); border-radius:10px; }
+.comment{ flex:0 0 auto; width:min(86vw,340px); scroll-snap-align:center; max-height:330px; overflow-y:auto; background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:14px 16px; }
 .comment .c-head{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
 .comment .c-name{ font-weight:700; color:var(--white); font-size:14px; }
 .comment .c-date{ font-family:var(--dot); font-size:11px; color:var(--dim); }

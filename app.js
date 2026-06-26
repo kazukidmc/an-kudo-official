@@ -218,8 +218,9 @@ async function loadDiary(){
   const { data, error } = await sb.from('diary').select('*').order('created_at',{ascending:false});
   if(error){ console.warn(error); return; }
   const feed = $('#diaryFeed');
-  if(!data.length){ feed.innerHTML=''; $('#diaryEmpty').hidden=false; return; }
+  if(!data.length){ feed.innerHTML=''; $('#diaryEmpty').hidden=false; $('#diaryHint').hidden=true; return; }
   $('#diaryEmpty').hidden = true;
+  $('#diaryHint').hidden = (data.length < 2);
   feed.innerHTML = data.map(d=>`
     <article class="diary-card">
       <div class="body">${esc(d.body)}</div>
@@ -250,8 +251,9 @@ async function loadComments(){
   const repliesByParent = {};
   data.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
   const list = $('#commentList');
-  if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; return; }
+  if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; $('#commentHint').hidden=true; return; }
   $('#commentEmpty').hidden = true;
+  $('#commentHint').hidden = (tops.length < 2);
   list.innerHTML = tops.map(c=>{
     const reps = (repliesByParent[c.id]||[]).map(r=>`
       <div class="reply"><div class="c-head"><span class="c-name"></span><span class="c-date">${fmtDate(r.created_at)}</span>
