@@ -23,7 +23,9 @@ document.addEventListener('dragstart',   e=>{ if(e.target && e.target.tagName ==
 /* ライトボックス */
 const lb = $('#lightbox'), lbInner = $('#lbInner');
 function openLightbox(type, src){
-  lbInner.innerHTML = (type === 'video')
+  lbInner.innerHTML = (type === 'youtube')
+    ? `<div class="lb-yt"><iframe src="https://www.youtube.com/embed/${src}?autoplay=1&rel=0&playsinline=1" title="YouTube" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`
+    : (type === 'video')
     ? `<video src="${src}" controls autoplay playsinline></video>`
     : `<img src="${src}" alt="">`;
   lb.classList.add('show');
@@ -42,10 +44,15 @@ async function load(){
   $('#gpEmpty').hidden = true;
   wrap.innerHTML = data.map(x=>{
     const cap = x.caption ? `<figcaption>${esc(x.caption)}</figcaption>` : '';
-    const media = (x.type === 'video')
-      ? `<video src="${esc(x.url)}#t=0.1" muted playsinline preload="metadata"></video><span class="m-play">▶</span>`
-      : `<img src="${esc(x.url)}" alt="" loading="lazy">`;
-    return `<figure class="m-item" data-type="${x.type}" data-src="${esc(x.url)}">${media}${cap}</figure>`;
+    const yt = (typeof x.url === 'string' && x.url.indexOf('youtube:') === 0) ? x.url.slice(8) : '';
+    const media = yt
+      ? `<img src="https://img.youtube.com/vi/${yt}/hqdefault.jpg" alt="" loading="lazy"><span class="m-play">▶</span>`
+      : (x.type === 'video'
+        ? `<video src="${esc(x.url)}#t=0.1" muted playsinline preload="metadata"></video><span class="m-play">▶</span>`
+        : `<img src="${esc(x.url)}" alt="" loading="lazy">`);
+    const dtype = yt ? 'youtube' : x.type;
+    const dsrc  = yt ? yt : esc(x.url);
+    return `<figure class="m-item" data-type="${dtype}" data-src="${dsrc}">${media}${cap}</figure>`;
   }).join('');
 }
 $('#masonry').addEventListener('click', e=>{

@@ -32,6 +32,18 @@ function toast(msg){
   document.addEventListener('dragstart',   e=>{ if(e.target && e.target.tagName === 'IMG') e.preventDefault(); }, { capture:true });
 })();
 
+/* ---------- YouTube ヘルパー（埋め込み・容量ゼロ） ---------- */
+function ytId(s){
+  if(!s) return '';
+  s = String(s).trim();
+  if(/^[\w-]{11}$/.test(s)) return s;                       // すでにID
+  const m = s.match(/(?:youtu\.be\/|[?&]v=|\/embed\/|\/shorts\/)([\w-]{11})/);
+  return m ? m[1] : '';
+}
+function isYouTube(m){ return m && typeof m.url === 'string' && m.url.indexOf('youtube:') === 0; }
+function ytIdOf(m){ return m.url.slice(8); }
+function ytThumb(id, q){ return `https://img.youtube.com/vi/${id}/${q || 'hqdefault'}.jpg`; }
+
 /* ---------- 背景：星 & 光の粒子 ---------- */
 (function stars(){
   const w = $('#bgStars'); let h='';
@@ -54,7 +66,9 @@ function toast(msg){
 const lb = $('#lightbox'), lbInner = $('#lbInner');
 function openLightbox(type, src){
   lbInner.innerHTML = '';
-  if(type === 'video'){
+  if(type === 'youtube'){
+    lbInner.innerHTML = `<div class="lb-yt"><iframe src="https://www.youtube.com/embed/${src}?autoplay=1&rel=0&playsinline=1" title="YouTube" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+  } else if(type === 'video'){
     const v = document.createElement('video'); v.src = src; v.controls = true; v.autoplay = true; v.playsInline = true;
     lbInner.appendChild(v);
   } else {
@@ -265,20 +279,28 @@ async function loadGallery(){
 function renderGalleryMain(){
   const stage = $('#gmStage'); if(!stage || !galleryData.length) return;
   const m = galleryData[galleryIndex];
-  const media = (m.type === 'video')
-    ? `<video class="gm-media" src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video><span class="play-badge"></span>`
-    : `<img class="gm-media" src="${esc(m.url)}" alt="">`;
+  let media, type = m.type, src = m.url;
+  if(isYouTube(m)){
+    const id = ytIdOf(m); type = 'youtube'; src = id;
+    media = `<img class="gm-media" src="${ytThumb(id,'hqdefault')}" alt=""><span class="play-badge"></span>`;
+  } else if(m.type === 'video'){
+    media = `<video class="gm-media" src="${esc(m.url)}#t=0.1" muted playsinline preload="metadata"></video><span class="play-badge"></span>`;
+  } else {
+    media = `<img class="gm-media" src="${esc(m.url)}" alt="">`;
+  }
   const cap = m.caption ? `<figcaption class="gm-cap">${esc(m.caption)}</figcaption>` : '';
   stage.innerHTML = media + cap;
-  stage.dataset.type = m.type; stage.dataset.src = m.url;
+  stage.dataset.type = type; stage.dataset.src = src;
 }
 function renderGalleryThumbs(){
   const wrap = $('#galleryThumbs'); if(!wrap) return;
   wrap.innerHTML = galleryData.map((m,i)=>{
     const real = m.id && !String(m.id).startsWith('sample');
-    const media = (m.type === 'video')
-      ? `<video src="${esc(m.url)}#t=0.1" muted preload="metadata"></video><span class="t-play">▶</span>`
-      : `<img src="${esc(m.url)}" alt="" loading="lazy">`;
+    const media = isYouTube(m)
+      ? `<img src="${ytThumb(ytIdOf(m),'mqdefault')}" alt="" loading="lazy"><span class="t-play">▶</span>`
+      : (m.type === 'video'
+        ? `<video src="${esc(m.url)}#t=0.1" muted preload="metadata"></video><span class="t-play">▶</span>`
+        : `<img src="${esc(m.url)}" alt="" loading="lazy">`);
     const adm = real ? `<div class="thumb-admin admin-only">
         <button class="t-mv" data-mv-media="${m.id}" data-dir="-1" title="前へ">◀</button>
         <button class="t-del" data-del-media="${m.id}" data-url="${esc(m.url)}" title="削除">✕</button>
@@ -331,6 +353,16 @@ $('#uploadBtn').addEventListener('click', async ()=>{
     toast('ギャラリーに追加しました'); loadGallery();
   }catch(e){ st.textContent='失敗: '+e.message; toast('アップロード失敗'); }
   finally{ btn.disabled = false; setTimeout(()=> st.textContent='', 4000); }
+});
+
+// YouTube動画を追加（埋め込み・Supabase容量を使わない）
+$('#ytAddBtn') && $('#ytAddBtn').addEventListener('click', async ()=>{
+  if(!requireBackend()) return;
+  const id = ytId($('#ytUrl').value);
+  if(!id){ toast('YouTubeのURLを正しく貼ってください'); return; }
+  const { error } = await sb.from('media').insert({ type:'video', url:'youtube:'+id, caption: $('#mediaCaption').value.trim() || null });
+  if(error){ toast('追加失敗: '+error.message); return; }
+  $('#ytUrl').value=''; $('#mediaCaption').value=''; toast('YouTube動画を追加しました'); loadGallery();
 });
 
 // 運営：サムネの並び替え（◀▶）・削除（✕）
