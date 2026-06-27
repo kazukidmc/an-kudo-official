@@ -493,6 +493,24 @@ $('#commentList').addEventListener('click', async e=>{
 function setAdmin(on){
   isAdmin = on;
   document.body.classList.toggle('is-admin', on);
+  if(on) loadAccessStats();
+}
+
+/* ---------- アクセス数（記録＝全員1セッション1回／集計の閲覧＝運営のみ） ---------- */
+(function logView(){
+  if(!sb) return;
+  try{ if(sessionStorage.getItem('av_viewed')) return; sessionStorage.setItem('av_viewed','1'); }catch(_){}
+  sb.from('views').insert({}).then(()=>{}, ()=>{});   // viewsテーブルが無ければ静かに失敗
+})();
+async function loadAccessStats(){
+  if(!sb) return;
+  const start = new Date(); start.setHours(0,0,0,0);
+  try{
+    const today = await sb.from('views').select('*', { count:'exact', head:true }).gte('created_at', start.toISOString());
+    const total = await sb.from('views').select('*', { count:'exact', head:true });
+    if(!today.error && $('#accToday')) $('#accToday').textContent = (today.count ?? 0).toLocaleString();
+    if(!total.error && $('#accTotal')) $('#accTotal').textContent = (total.count ?? 0).toLocaleString();
+  }catch(_){}
 }
 $('#adminFab').addEventListener('click', async ()=>{
   if(isAdmin){
