@@ -284,6 +284,43 @@ body.is-admin .upload-row, body.is-admin .modal-actions{ display:flex !important
 .mv-btn{ font-family:var(--jp); font-weight:700; font-size:13px; line-height:1; color:#fff; background:rgba(18,10,46,.85); border:1px solid var(--line); border-radius:8px; padding:5px 9px; cursor:pointer; }
 .mv-btn:hover{ background:var(--emilia); color:var(--night); }
 
+/* ===== おみくじ ===== */
+.omikuji{ text-align:center; }
+.omikuji-stage{ min-height:4px; }
+.omi-result{ max-width:380px; margin:6px auto 18px; padding:22px 18px; border-radius:18px; background:var(--panel); border:2px solid var(--gold); backdrop-filter:blur(6px); box-shadow:0 0 30px rgba(255,224,138,.35); animation:omiPop .5s cubic-bezier(.2,1.5,.35,1); }
+@keyframes omiPop{ 0%{ transform:scale(.6); opacity:0; } 100%{ transform:scale(1); opacity:1; } }
+.omi-kanji{ font-family:var(--impact); font-size:clamp(50px,15vw,88px); line-height:1; }
+.r-daikichi .omi-kanji{ color:#fff; text-shadow:0 0 18px var(--gold), 0 0 44px #ffe06a; }
+.r-chukichi .omi-kanji{ color:var(--gold); text-shadow:0 0 16px var(--gold); }
+.r-shokichi .omi-kanji{ color:var(--sky); text-shadow:0 0 16px var(--sky); }
+.r-kyo .omi-kanji{ color:var(--rose); text-shadow:0 0 16px var(--rose); }
+.omi-img{ max-width:100%; max-height:300px; margin:14px auto 0; border-radius:12px; }
+.omi-msg{ margin-top:14px; font-family:var(--min); font-size:16px; line-height:1.8; color:var(--white); white-space:pre-wrap; }
+
+.omikuji-btn{ position:relative; display:block; margin:18px auto 6px; width:clamp(120px,34vw,160px); height:clamp(120px,34vw,160px); border-radius:50%; border:none; background:transparent; cursor:pointer; transition:transform .15s; }
+.ob-ring{ position:absolute; inset:0; border-radius:50%; background:conic-gradient(#fff,#cdb35a,#ffe9a8,#9c7d2a,#fff3cf,#caa64a,#fff,#b6932f,#fff); box-shadow:0 10px 26px rgba(0,0,0,.55), 0 0 30px rgba(255,224,138,.55); }
+.ob-dome{ position:absolute; inset:13%; border-radius:50%; background:radial-gradient(circle at 38% 30%, rgba(255,255,255,.98), rgba(222,230,244,.72) 34%, rgba(150,168,198,.82) 70%, rgba(70,88,118,.92)); box-shadow:inset 0 5px 14px rgba(255,255,255,.7), inset 0 -12px 20px rgba(0,0,0,.45), 0 0 26px rgba(255,224,138,.55); animation:obGlow 1.8s ease-in-out infinite; }
+@keyframes obGlow{ 0%,100%{ box-shadow:inset 0 5px 14px rgba(255,255,255,.7), inset 0 -12px 20px rgba(0,0,0,.45), 0 0 18px rgba(255,224,138,.45); } 50%{ box-shadow:inset 0 5px 14px rgba(255,255,255,.85), inset 0 -12px 20px rgba(0,0,0,.45), 0 0 42px rgba(255,224,138,.95); } }
+.ob-label{ position:absolute; inset:0; z-index:2; display:flex; align-items:center; justify-content:center; font-family:var(--min); font-weight:800; font-size:clamp(18px,5vw,24px); color:#3a2a00; text-shadow:0 1px 0 rgba(255,255,255,.7); }
+.omikuji-btn:hover{ transform:scale(1.05); } .omikuji-btn:active{ transform:scale(.93); }
+.omikuji-btn.disabled{ filter:grayscale(.7) brightness(.65); pointer-events:none; }
+.omikuji-note{ text-align:center; font-family:var(--dot); font-size:12px; color:var(--dim); margin-top:6px; line-height:1.7; }
+.omikuji-done{ text-align:center; font-family:var(--min); color:var(--rose); margin-top:8px; font-size:15px; }
+
+/* 運営：おみくじ編集 */
+.omi-edit-block{ text-align:left; border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; background:rgba(0,0,0,.15); }
+.omi-edit-title{ font-family:var(--impact); font-size:20px; margin-bottom:8px; }
+.omi-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+.omi-chip{ background:rgba(255,255,255,.08); border:1px solid var(--line); border-radius:14px; padding:4px 6px 4px 10px; font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+.omi-chip button, .omi-thumb button{ background:transparent; border:none; color:var(--rose); cursor:pointer; font-size:12px; line-height:1; }
+.omi-thumbs{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:8px; }
+.omi-thumb{ position:relative; width:60px; height:60px; border-radius:8px; overflow:hidden; border:1px solid var(--line); }
+.omi-thumb img{ width:100%; height:100%; object-fit:cover; }
+.omi-thumb button{ position:absolute; top:0; right:0; background:rgba(0,0,0,.6); color:#fff; padding:1px 5px; }
+.omi-add{ display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; align-items:center; }
+.omi-add input[type=text]{ flex:1 1 160px; }
+.omi-add .dim{ color:var(--dim); font-size:12px; }
+
 /* 運営：アクセス数バー（管理モードのみ・ヒーロー上部） */
 .access-bar{ display:flex; gap:16px; align-items:center; justify-content:center; width:max-content; max-width:96%; margin:0 auto 18px; padding:8px 18px; background:var(--panel); border:1px solid var(--gold); border-radius:30px; backdrop-filter:blur(6px); font-family:var(--dot); font-size:12px; color:var(--sky); box-shadow:0 0 18px rgba(255,224,138,.25); }
 .access-bar .ab-label{ color:var(--gold); letter-spacing:2px; }

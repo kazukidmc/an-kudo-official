@@ -106,6 +106,30 @@ const PROFILE_SCHEMA = [
 const LINK_SCHEMA = [
   ['twitter_url','X(Twitter) URL'],['heaven_url','写メ日記・予約 URL']
 ];
+/* おみくじ：種類（確率の重み）と既定メッセージ */
+const OMIKUJI_TYPES = [
+  {key:'daikichi', label:'大吉', weight:25, cls:'r-daikichi'},
+  {key:'chukichi', label:'中吉', weight:35, cls:'r-chukichi'},
+  {key:'shokichi', label:'小吉', weight:30, cls:'r-shokichi'},
+  {key:'kyo',      label:'凶',   weight:10, cls:'r-kyo'},
+];
+const DEFAULT_OMIKUJI = {
+  daikichi:{ messages:['最高の一日になる予感♡ えまと両想い確定！','大吉ｷﾀ━━━♡ 今日のあなたは無敵だよ！'], images:[] },
+  chukichi:{ messages:['いいことありそう♪ えまに会いに来てね','中吉♡ 笑顔でいればもっと良くなる！'], images:[] },
+  shokichi:{ messages:['コツコツが吉。えまも応援してるよ！','小吉♡ 小さな幸せ、見つけてね'], images:[] },
+  kyo:{ messages:['今日は無理しないで。えまがギュッてしてあげる♡','凶でも大丈夫、明日は上がるだけ！'], images:[] },
+};
+const OMIKUJI_KEYS = OMIKUJI_TYPES.map(t=>t.key);
+function normalizeOmikuji(o){
+  o = (o && typeof o === 'object') ? o : {};
+  OMIKUJI_KEYS.forEach(k=>{
+    o[k] = (o[k] && typeof o[k] === 'object') ? o[k] : {};
+    o[k].messages = Array.isArray(o[k].messages) ? o[k].messages : [];
+    o[k].images   = Array.isArray(o[k].images)   ? o[k].images   : [];
+  });
+  return o;
+}
+
 const DEFAULT_PROFILE = {
   name:'えま', age:'永遠の21歳', height:'149cm', bwh:'B88 W56 H86', cup:'Eカップ❤',
   blood:'B型', visual:'むちむちぷりてぃがーる', personality:'明るい、えっちなお姉さん',
@@ -116,7 +140,8 @@ const DEFAULT_PROFILE = {
   heaven_url:'https://www.cityheaven.net/saitama/A1101/A110101/moegaku/girlid-44311496/',
   hero_url:'images/photo1.jpg',      // トップ写真（運営が変更可）
   profile_url:'images/photo2.jpg',   // プロフィール写真（運営が変更可）
-  recommends:[]                      // おすすめ商品（アフィリエイト）
+  recommends:[],                     // おすすめ商品（アフィリエイト）
+  omikuji: JSON.parse(JSON.stringify(DEFAULT_OMIKUJI))   // おみくじの結果（運営が編集可）
 };
 let profileCache = {...DEFAULT_PROFILE};
 
@@ -129,8 +154,10 @@ async function loadProfile(){
       catch(_){ /* 旧テキストはJSONでないので無視し、初期値を表示 */ }
     }
   }
+  data.omikuji = normalizeOmikuji(data.omikuji);
   profileCache = data;
   renderProfile(data);
+  renderOmikujiEditor();
 }
 function renderProfile(p){
   const rows = PROFILE_SCHEMA
@@ -232,6 +259,91 @@ $('#recommendList') && $('#recommendList').addEventListener('click', async e=>{
   arr.splice(parseInt(del.dataset.delReco,10), 1);
   if(await saveProfile()){ toast('削除しました'); renderRecommends(arr); }
 });
+
+/* ---------- おみくじ ---------- */
+const _omiSound = (()=>{ try{ const a = new Audio('sounds/omikuji.mp3'); a.preload='auto'; a.volume=0.9; return a; }catch(_){ return null; } })();
+function playOmikujiSound(){ if(!_omiSound) return; try{ _omiSound.currentTime = 0; const p = _omiSound.play(); if(p && p.catch) p.catch(()=>{}); }catch(_){} }
+function omiToday(){ const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function omiDrawnToday(){ try{ return localStorage.getItem('omikuji_date') === omiToday(); }catch(_){ return false; } }
+function updateOmikujiButtonState(){
+  const done = omiDrawnToday() && !isAdmin;
+  const b = $('#omikujiBtn'), d = $('#omikujiDone');
+  if(b) b.classList.toggle('disabled', done);
+  if(d) d.hidden = !done;
+}
+function drawOmikuji(){
+  const o = profileCache.omikuji = normalizeOmikuji(profileCache.omikuji);
+  const total = OMIKUJI_TYPES.reduce((s,t)=> s + t.weight, 0);
+  let r = Math.random()*total, picked = OMIKUJI_TYPES[OMIKUJI_TYPES.length-1];
+  for(const t of OMIKUJI_TYPES){ if(r < t.weight){ picked = t; break; } r -= t.weight; }
+  const d = o[picked.key];
+  const msgs = (d.messages && d.messages.length) ? d.messages : DEFAULT_OMIKUJI[picked.key].messages;
+  const imgs = d.images || [];
+  const msg = msgs.length ? msgs[(Math.random()*msgs.length)|0] : '';
+  const img = imgs.length ? imgs[(Math.random()*imgs.length)|0] : '';
+  $('#omikujiStage').innerHTML = `<div class="omi-result ${picked.cls}">
+    <div class="omi-kanji">${picked.label}</div>
+    ${img ? `<img class="omi-img" src="${esc(img)}" alt="">` : ''}
+    ${msg ? `<div class="omi-msg">${esc(msg)}</div>` : ''}
+  </div>`;
+}
+$('#omikujiBtn') && $('#omikujiBtn').addEventListener('click', ()=>{
+  if(!isAdmin && omiDrawnToday()){ toast('今日はもう引いたよ！また明日♡'); updateOmikujiButtonState(); return; }
+  playOmikujiSound();
+  drawOmikuji();
+  try{ localStorage.setItem('omikuji_date', omiToday()); }catch(_){}
+  updateOmikujiButtonState();
+});
+
+/* おみくじ編集（運営：結果ごとに画像・メッセージを複数登録） */
+function renderOmikujiEditor(){
+  const wrap = $('#omikujiEditor'); if(!wrap) return;
+  const o = profileCache.omikuji = normalizeOmikuji(profileCache.omikuji);
+  wrap.innerHTML = OMIKUJI_TYPES.map(t=>{
+    const d = o[t.key];
+    const msgs = d.messages.map((m,i)=>`<span class="omi-chip">${esc(m)}<button data-omi-delmsg="${t.key}:${i}" title="削除">✕</button></span>`).join('');
+    const imgs = d.images.map((u,i)=>`<span class="omi-thumb"><img src="${esc(u)}" alt=""><button data-omi-delimg="${t.key}:${i}" title="削除">✕</button></span>`).join('');
+    return `<div class="omi-edit-block">
+      <p class="omi-edit-title ${t.cls}">${t.label}</p>
+      <div class="omi-chips">${msgs || '<span class="dim">メッセージ未登録（無ければ既定文を表示）</span>'}</div>
+      <div class="omi-add"><input type="text" data-omi-msgkey="${t.key}" placeholder="メッセージを追加"><button class="btn-ghost" data-omi-addmsg="${t.key}">＋文</button></div>
+      <div class="omi-thumbs">${imgs}</div>
+      <div class="omi-add"><input type="file" accept="image/*" data-omi-imgkey="${t.key}"><button class="btn-ghost" data-omi-addimg="${t.key}">＋画像</button><span class="dim">画像が無ければ文字だけ表示</span></div>
+    </div>`;
+  }).join('');
+}
+$('#omikujiEditor') && $('#omikujiEditor').addEventListener('click', async e=>{
+  const addMsg = e.target.closest('[data-omi-addmsg]'), delMsg = e.target.closest('[data-omi-delmsg]');
+  const addImg = e.target.closest('[data-omi-addimg]'), delImg = e.target.closest('[data-omi-delimg]');
+  if(!addMsg && !delMsg && !addImg && !delImg) return;
+  const o = profileCache.omikuji = normalizeOmikuji(profileCache.omikuji);
+  if(addMsg){
+    const key = addMsg.dataset.omiAddmsg;
+    const inp = document.querySelector(`#omikujiEditor [data-omi-msgkey="${key}"]`);
+    const v = (inp.value || '').trim(); if(!v) return;
+    o[key].messages.push(v);
+    if(await saveProfile()){ toast('メッセージを追加しました'); renderOmikujiEditor(); }
+    return;
+  }
+  if(delMsg){ const [key,i] = delMsg.dataset.omiDelmsg.split(':'); o[key].messages.splice(+i,1); if(await saveProfile()){ toast('削除しました'); renderOmikujiEditor(); } return; }
+  if(addImg){
+    if(!requireBackend()) return;
+    const key = addImg.dataset.omiAddimg;
+    const fin = document.querySelector(`#omikujiEditor [data-omi-imgkey="${key}"]`);
+    const file = fin.files[0]; if(!file){ toast('画像を選んでください'); return; }
+    toast('アップロード中…');
+    try{
+      const path = `omi_${key}_${Date.now()}_${file.name.replace(/[^\w.\-]/g,'_')}`;
+      const { error:up } = await sb.storage.from('media').upload(path, file, { cacheControl:'3600', upsert:false }); if(up) throw up;
+      const url = sb.storage.from('media').getPublicUrl(path).data.publicUrl;
+      o[key].images.push(url);
+      if(await saveProfile()){ toast('画像を追加しました'); renderOmikujiEditor(); }
+    }catch(err){ toast('失敗: '+err.message); }
+    return;
+  }
+  if(delImg){ const [key,i] = delImg.dataset.omiDelimg.split(':'); o[key].images.splice(+i,1); if(await saveProfile()){ toast('削除しました'); renderOmikujiEditor(); } return; }
+});
+updateOmikujiButtonState();
 
 // プロフィール編集（全項目「任意」＝空欄のまま保存してもOK）
 $('#editProfileBtn').addEventListener('click', ()=>{
@@ -494,6 +606,7 @@ function setAdmin(on){
   isAdmin = on;
   document.body.classList.toggle('is-admin', on);
   if(on) loadAccessStats();
+  if(typeof updateOmikujiButtonState === 'function') updateOmikujiButtonState();
 }
 
 /* ---------- アクセス数（記録＝全員1セッション1回／集計の閲覧＝運営のみ） ---------- */
