@@ -108,10 +108,10 @@ const LINK_SCHEMA = [
 ];
 /* おみくじ：種類（確率の重み）と既定メッセージ */
 const OMIKUJI_TYPES = [
-  {key:'daikichi', label:'大吉', weight:25, cls:'r-daikichi'},
-  {key:'chukichi', label:'中吉', weight:35, cls:'r-chukichi'},
-  {key:'shokichi', label:'小吉', weight:30, cls:'r-shokichi'},
-  {key:'kyo',      label:'凶',   weight:10, cls:'r-kyo'},
+  {key:'daikichi', label:'大吉', weight:20, cls:'r-daikichi'},
+  {key:'chukichi', label:'中吉', weight:40, cls:'r-chukichi'},
+  {key:'shokichi', label:'小吉', weight:35, cls:'r-shokichi'},
+  {key:'kyo',      label:'凶',   weight:5,  cls:'r-kyo'},
 ];
 const DEFAULT_OMIKUJI = {
   daikichi:{ messages:['最高の一日になる予感♡ えまと両想い確定！','大吉ｷﾀ━━━♡ 今日のあなたは無敵だよ！'], images:[] },
