@@ -505,20 +505,37 @@ $('#galleryThumbs') && $('#galleryThumbs').addEventListener('click', async e=>{
 });
 
 /* ---------- 日記 ---------- */
+let diaryCache = { posts:[], byPost:{} };
+let currentDiaryPost = null;
 async function loadDiary(){
   if(!sb) return;
-  const { data, error } = await sb.from('diary').select('*').order('created_at',{ascending:false});
-  if(error){ console.warn(error); return; }
+  const [pRes, cRes] = await Promise.all([
+    sb.from('diary').select('*').order('created_at',{ascending:false}),
+    sb.from('comments').select('*').order('created_at',{ascending:true})
+  ]);
+  if(pRes.error){ console.warn(pRes.error); return; }
+  const posts = pRes.data || [];
+  const dcs = (cRes.error ? [] : (cRes.data||[])).filter(c=> c.diary_id);   // 日記へのコメントのみ
+  const byPost = {}; dcs.forEach(c=> (byPost[c.diary_id] ||= []).push(c));
+  diaryCache = { posts, byPost };
   const feed = $('#diaryFeed');
-  if(!data.length){ feed.innerHTML=''; $('#diaryEmpty').hidden=false; $('#diaryHint').hidden=true; return; }
+  if(!posts.length){ feed.innerHTML=''; $('#diaryEmpty').hidden=false; $('#diaryHint').hidden=true; return; }
   $('#diaryEmpty').hidden = true;
-  $('#diaryHint').hidden = (data.length < 2);
-  feed.innerHTML = data.map(d=>`
-    <article class="diary-card">
+  $('#diaryHint').hidden = (posts.length < 2);
+  feed.innerHTML = posts.map(d=>{
+    const tops = (byPost[d.id]||[]).filter(c=> !c.parent_id);
+    const latest = tops[tops.length-1];   // 最新1件のみ表示
+    const preview = latest
+      ? `<div class="diary-latest">💬 <b>${esc(latest.name)||'名無し'}</b>：${esc(latest.body)}${tops.length>1?` <span class="dim">他${tops.length-1}件</span>`:''}</div>`
+      : `<div class="diary-latest dim">タップしてコメントしてね♡</div>`;
+    return `<article class="diary-card" data-post="${d.id}">
       <div class="body">${esc(d.body)}</div>
       <div class="date">${fmtDate(d.created_at)}</div>
+      ${preview}
+      <span class="diary-open">タップで全コメント ›</span>
       <button class="del-btn admin-only" data-del-diary="${d.id}">削除</button>
-    </article>`).join('');
+    </article>`;
+  }).join('');
 }
 $('#diaryPostBtn').addEventListener('click', async ()=>{
   if(!requireBackend()) return;
@@ -534,14 +551,89 @@ $('#diaryFeed').addEventListener('click', async e=>{
   if(error){ toast('削除失敗'); return; } toast('削除しました'); loadDiary();
 });
 
+/* 投稿タップ → コメント詳細を開く */
+$('#diaryFeed').addEventListener('click', e=>{
+  if(e.target.closest('[data-del-diary]')) return;
+  const card = e.target.closest('.diary-card'); if(!card) return;
+  openDiaryDetail(card.dataset.post);
+});
+function diaryCommentCardHtml(c, replies){
+  const reps = (replies||[]).map(r=>`<div class="reply"><div class="c-head"><span class="c-name"></span><span class="c-date">${fmtDate(r.created_at)}</span><button class="del-btn admin-only" data-del-comment="${r.id}">削除</button></div><div class="c-body">${esc(r.body)}</div></div>`).join('');
+  return `<div class="comment" data-id="${c.id}">
+    <div class="c-head"><span class="c-name">${esc(c.name)||'名無しさん'}</span><span class="c-date">${fmtDate(c.created_at)}</span></div>
+    <div class="c-body">${esc(c.body)}</div>
+    <div class="c-actions admin-only"><button class="btn-ghost" data-reply="${c.id}" data-diary="${esc(c.diary_id)}">返信</button><button class="del-btn" data-del-comment="${c.id}">削除</button></div>
+    ${reps}
+  </div>`;
+}
+function openDiaryDetail(postId){
+  currentDiaryPost = postId;
+  const post = diaryCache.posts.find(p=> String(p.id) === String(postId)); if(!post) return;
+  const all = diaryCache.byPost[postId] || [];
+  const tops = all.filter(c=> !c.parent_id);
+  const repliesByParent = {}; all.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
+  const commentsHtml = tops.length
+    ? tops.slice().reverse().map(c=> diaryCommentCardHtml(c, repliesByParent[c.id])).join('')   // 新しい順で全件
+    : '<p class="dim" style="text-align:center">まだコメントがないよ。最初のひとことを♡</p>';
+  $('#diaryDetail').innerHTML = `
+    <div class="dd-post"><div class="dd-body">${esc(post.body)}</div><div class="dd-date">${fmtDate(post.created_at)}</div></div>
+    <p class="dd-label">💬 コメント（${tops.length}）</p>
+    <div class="dd-comments">${commentsHtml}</div>
+    <form class="comment-form dd-form" data-post="${esc(postId)}">
+      <input type="text" class="dd-name" placeholder="お名前（任意）" maxlength="24">
+      <textarea class="dd-body-in" placeholder="この投稿にコメント♡" maxlength="400" required></textarea>
+      <button class="btn" type="submit">コメントする</button>
+    </form>`;
+  $('#diaryModal').classList.add('show');
+}
+async function refreshDiaryDetail(){ await loadDiary(); if(currentDiaryPost) openDiaryDetail(currentDiaryPost); }
+// 詳細内：閲覧者のコメント投稿
+$('#diaryDetail') && $('#diaryDetail').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const form = e.target.closest('.dd-form'); if(!form || !sb) return;
+  const postId = form.dataset.post;
+  const body = form.querySelector('.dd-body-in').value.trim(); if(!body) return;
+  const name = form.querySelector('.dd-name').value.trim() || null;
+  const { error } = await sb.from('comments').insert({ diary_id:postId, name, body, is_admin:false, parent_id:null });
+  if(error){ toast('投稿失敗: '+error.message); return; }
+  toast('コメントありがとう♡'); refreshDiaryDetail();
+});
+// 詳細内：運営の返信・削除
+$('#diaryDetail') && $('#diaryDetail').addEventListener('click', async e=>{
+  const rep = e.target.closest('[data-reply]');
+  const del = e.target.closest('[data-del-comment]');
+  if(rep){
+    const id = rep.dataset.reply, did = rep.dataset.diary;
+    const c = rep.closest('.comment'); if(c.querySelector('.reply-form')) return;
+    const f = document.createElement('div'); f.className='reply-form';
+    f.innerHTML = `<textarea placeholder="えまとして返信…"></textarea><button class="btn">送信</button>`;
+    c.appendChild(f);
+    f.querySelector('button').addEventListener('click', async ()=>{
+      const body = f.querySelector('textarea').value.trim(); if(!body) return;
+      const { error } = await sb.from('comments').insert({ diary_id:did, body, is_admin:true, parent_id:id });
+      if(error){ toast('返信失敗: '+error.message); return; }
+      toast('返信しました'); refreshDiaryDetail();
+    });
+    return;
+  }
+  if(del){
+    if(!confirm('このコメントを削除しますか？')) return;
+    const { error } = await sb.from('comments').delete().eq('id', del.dataset.delComment);
+    if(error){ toast('削除失敗'); return; } toast('削除しました'); refreshDiaryDetail();
+  }
+});
+$('#diaryModalClose') && $('#diaryModalClose').addEventListener('click', ()=> $('#diaryModal').classList.remove('show'));
+$('#diaryModal') && $('#diaryModal').addEventListener('click', e=>{ if(e.target.id === 'diaryModal') $('#diaryModal').classList.remove('show'); });
+
 /* ---------- コメント ---------- */
 async function loadComments(){
   if(!sb) return;
   const { data, error } = await sb.from('comments').select('*').order('created_at',{ascending:true});
   if(error){ console.warn(error); return; }
-  const tops = data.filter(c=> !c.parent_id).reverse();   // 最新を左に
+  const gen = data.filter(c=> !c.diary_id);               // 一般コメント欄（日記コメントは除外）
+  const tops = gen.filter(c=> !c.parent_id).reverse();    // 最新を左に
   const repliesByParent = {};
-  data.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
+  gen.filter(c=> c.parent_id).forEach(r=> (repliesByParent[r.parent_id] ||= []).push(r));
   const list = $('#commentList');
   if(!tops.length){ list.innerHTML=''; $('#commentEmpty').hidden=false; $('#commentHint').hidden=true; return; }
   $('#commentEmpty').hidden = true;
