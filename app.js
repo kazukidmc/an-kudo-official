@@ -261,7 +261,7 @@ $('#recommendList') && $('#recommendList').addEventListener('click', async e=>{
 });
 
 /* ---------- おみくじ ---------- */
-const _omiSound = (()=>{ try{ const a = new Audio('sounds/omikuji.mp3'); a.preload='auto'; a.volume=0.9; return a; }catch(_){ return null; } })();
+const _omiSound = (()=>{ try{ const a = new Audio('sounds/omikuji.mp3'); a.preload='auto'; a.volume=0.4; return a; }catch(_){ return null; } })();
 function playOmikujiSound(){ if(!_omiSound) return; try{ _omiSound.currentTime = 0; const p = _omiSound.play(); if(p && p.catch) p.catch(()=>{}); }catch(_){} }
 function omiToday(){ const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
 function omiDrawnToday(){ try{ return localStorage.getItem('omikuji_date') === omiToday(); }catch(_){ return false; } }
